@@ -44,6 +44,7 @@ async def create_agent(
         agent_name: 代理程式名稱
         agent_instructions: 代理程式指令
         model_deployment_name: 模型部署名稱（可選）
+        toolset: 工具集（可選）
         
     Returns:
         (成功標誌, 訊息, Agent ID)
