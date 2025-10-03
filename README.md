@@ -26,3 +26,24 @@ pip install 套件名稱
 ```bash
 pip freeze > requirements.txt
 ```
+
+
+# 環境變數
+* 建立 .env 檔案，確保 .env 檔案在 .gitignore 內
+* 不要讓 github copilot 讀取到: 可以建立 `.github/copilot-instructions.md` 檔案
+
+
+# Azure 驗證
+* 使用 Azure CLI 在本機登入 Azure，在 ai foundry 建立、刪除 agent
+
+* 登入 Azure
+```bash
+az login --use-device-code
+```
+
+* 檢查目前登入狀態
+```bash
+az account show
+```
+
+
