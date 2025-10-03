@@ -1,3 +1,16 @@
+"""
+說明: 此模組用於與已存在的 Azure AI 代理程式進行互動，允許使用者輸入文字並獲取代理程式的回應。
+
+重要元件: 
+- chat_exist_agent(agent_id: str): 主函式，負責與 Azure AI 代理程式進行互動。
+- AzureCliCredential: 用於 Azure 身份驗證的非同步憑證物件。
+- AzureAIAgent: 表示 Azure AI 代理程式的物件。
+- AzureAIAgentThread: 用於管理代理程式對話執行緒的物件。
+
+使用範例: 
+執行此模組時，使用者需提供 Agent ID，然後可以輸入文字與代理程式互動，直到輸入 'quit' 結束對話。
+"""
+
 from azure.identity.aio import AzureCliCredential
 from semantic_kernel.agents import AzureAIAgent, AzureAIAgentThread
 import asyncio

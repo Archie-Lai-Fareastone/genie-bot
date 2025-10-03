@@ -1,19 +1,20 @@
 """
-Azure AI Agent 操作函式庫
+說明: 此模組提供與 Azure AI 專案相關的操作功能，包括建立與刪除代理程式。
 
-提供建立和刪除 Azure AI Agent 的純函式。
+重要元件: 
+- _get_project_client(): 建立並返回 AIProjectClient 實例，用於與 Azure AI 專案互動。
+- create_agent(): 非同步函式，用於建立新的 Azure AI 代理程式。
+- delete_agent(): 非同步函式，用於刪除指定的 Azure AI 代理程式。
 
-使用方式：
-    # 建立代理程式
-    agent_id = await create_agent("我的助手", "你是一個有幫助的助理")
-    
-    # 刪除代理程式
-    success = await delete_agent(agent_id)
+使用範例: 
+- 使用 create_agent() 建立代理程式，需提供代理程式名稱與指令。
+- 使用 delete_agent() 刪除代理程式，需提供代理程式 ID。
 """
 
 from typing import Optional, Tuple
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
+from azure.ai.agents.models import ToolSet
 from dotenv import load_dotenv
 import os
 
@@ -33,7 +34,8 @@ def _get_project_client() -> AIProjectClient:
 async def create_agent(
     agent_name: str, 
     agent_instructions: str,
-    model_deployment_name: Optional[str] = None
+    model_deployment_name: Optional[str] = None,
+    toolset: ToolSet = None
 ) -> Tuple[bool, str, Optional[str]]:
     """
     建立新的 Azure AI Agent
@@ -62,6 +64,7 @@ async def create_agent(
                 model=model_deployment_name,
                 name=agent_name.strip(),
                 instructions=agent_instructions.strip(),
+                toolset=toolset
             )
             
             success_message = f"成功建立代理程式 '{agent.name}'"
