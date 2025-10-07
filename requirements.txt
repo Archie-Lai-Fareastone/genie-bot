@@ -131,3 +131,10 @@ ipykernel==6.30.1
 # Databricks
 databricks_ai_bridge==0.8.0
 databricks-sdk==0.67.0
+
+# Bot Framework
+botbuilder-core==4.17.0
+botbuilder-integration-aiohttp==4.17.0
+botbuilder-schema==4.17.0
+botframework-connector==4.17.0
+botframework-streaming==4.17.0
