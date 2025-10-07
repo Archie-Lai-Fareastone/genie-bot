@@ -11,6 +11,7 @@
 執行此模組時，使用者需提供 Agent ID，然後可以輸入文字與代理程式互動，直到輸入 'quit' 結束對話。
 """
 
+
 from azure.identity.aio import AzureCliCredential
 from semantic_kernel.agents import AzureAIAgent, AzureAIAgentThread
 import asyncio

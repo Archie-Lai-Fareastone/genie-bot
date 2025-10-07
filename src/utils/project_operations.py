@@ -11,6 +11,7 @@
 - 使用 delete_agent() 刪除代理程式，需提供代理程式 ID。
 """
 
+
 from typing import Optional, Tuple
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
@@ -21,14 +22,14 @@ import os
 load_dotenv()
 
 
-def _get_project_client() -> AIProjectClient:
+def get_project_client() -> Tuple[AIProjectClient, DefaultAzureCredential]:
     """建立並返回 AIProjectClient 實例"""
     endpoint = os.getenv("AZURE_AI_AGENT_ENDPOINT")
     if not endpoint:
         raise ValueError("環境變數 AZURE_AI_AGENT_ENDPOINT 未設定")
     
     credential = DefaultAzureCredential()
-    return AIProjectClient(credential=credential, endpoint=endpoint)
+    return AIProjectClient(credential=credential, endpoint=endpoint), credential
 
 
 async def create_agent(
@@ -58,7 +59,7 @@ async def create_agent(
         if not (agent_instructions := agent_instructions.strip()):
             return False, "代理程式指令不能為空", None
         
-        project_client = _get_project_client()
+        project_client, _ = get_project_client()
         
         with project_client:
             agent = project_client.agents.create_agent(
@@ -90,7 +91,7 @@ async def delete_agent(agent_id: str) -> Tuple[bool, str]:
         if not agent_id or not agent_id.strip():
             return False, "代理程式 ID 不能為空"
         
-        project_client = _get_project_client()
+        project_client, _ = get_project_client()
         
         with project_client:
             try:
