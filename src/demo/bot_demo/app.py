@@ -12,8 +12,8 @@ from botbuilder.integration.aiohttp import (
 )
 from botbuilder.schema import Activity, ActivityTypes
 
-from bot import MyBot
-from config import DefaultConfig
+from src.demo.bot_demo.bot import MyBot
+from src.demo.bot_demo.config import DefaultConfig
 
 CONFIG = DefaultConfig()
 

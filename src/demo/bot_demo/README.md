@@ -2,10 +2,6 @@
 
 此機器人已使用 [Bot Framework](https://dev.botframework.com) 建立，展示如何建立一個能與 Databricks Genie API 互動的聊天機器人。機器人可以接受用戶的自然語言查詢，並透過 Databricks Genie 返回智慧回應和查詢結果。
 
-## 先決條件
-
-### 安裝相依套件
-
 ## 設定
 
 1. 複製 `.env.example` 檔案並重新命名為 `.env`

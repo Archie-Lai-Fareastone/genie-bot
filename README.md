@@ -34,7 +34,7 @@ pip freeze > requirements.txt
 
 
 # Azure 驗證
-* 使用 [Azure CLI](https://learn.microsoft.com/zh-tw/cli/azure/install-azure-cli?view=azure-cli-latest) 在本機登入 Azure，在 ai foundry 建立、刪除 agent
+* 如果需要在 ai foundry 建立、刪除 agent，使用 [Azure CLI](https://learn.microsoft.com/zh-tw/cli/azure/install-azure-cli?view=azure-cli-latest) 在本機登入 Azure
 
 * 登入 Azure
 ```bash
