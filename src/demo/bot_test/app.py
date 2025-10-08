@@ -13,13 +13,10 @@ from botbuilder.integration.aiohttp import (
 from botbuilder.schema import Activity, ActivityTypes
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
-from src.demo.bot_demo.bot import MyBot
-from src.demo.bot_demo.config import DefaultConfig
-
-CONFIG = DefaultConfig()
+from src.demo.bot_test.bot import MyBot
 
 # 建立適配器
-ADAPTER = CloudAdapter(ConfigurationBotFrameworkAuthentication(CONFIG))
+ADAPTER = CloudAdapter(ConfigurationBotFrameworkAuthentication(configuration={"port": 3978}))
 
 
 # 錯誤處理函式
@@ -84,6 +81,6 @@ APP.router.add_post("/api/messages", messages)
 
 if __name__ == "__main__":
     try:
-        web.run_app(APP, host="localhost", port=CONFIG.PORT)
+        web.run_app(APP, host="localhost", port=3978)
     except Exception as error:
         raise error

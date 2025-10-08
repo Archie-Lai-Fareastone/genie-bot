@@ -10,8 +10,11 @@
 執行此模組時，會自動建立一個名為 "測試助手" 的代理程式，並在建立後立即刪除。
 """
 
-
+import sys
+import os
 import asyncio
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 from src.utils.project_operations import create_agent, delete_agent
 
 

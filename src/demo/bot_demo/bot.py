@@ -7,8 +7,11 @@ from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.dashboards import GenieAPI
 from botbuilder.core import ActivityHandler, TurnContext, MessageFactory
 from botbuilder.schema import ChannelAccount
+import sys
+import os
 
-from src.utils.adaptive_card import (
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
+from src.demo.bot_demo.adaptive_card import (
     create_table_adaptive_card,
     create_text_adaptive_card,
     create_error_adaptive_card,

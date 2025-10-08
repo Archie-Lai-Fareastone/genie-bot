@@ -10,6 +10,7 @@
 
 
 import asyncio
+import sys
 import os
 import json
 from typing import Dict
@@ -17,6 +18,7 @@ from dotenv import load_dotenv
 from databricks.sdk import WorkspaceClient
 from azure.ai.agents.models import (FunctionTool, ToolSet)
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 from src.utils.project_operations import create_agent, get_project_client
 from src.utils.genie_connections import setup_genie_functions
 

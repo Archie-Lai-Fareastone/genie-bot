@@ -138,3 +138,12 @@ botbuilder-integration-aiohttp==4.17.0
 botbuilder-schema==4.17.0
 botframework-connector==4.17.0
 botframework-streaming==4.17.0
+
+# Microsoft 365 agents sdk
+microsoft-agents-activity==0.3.2
+microsoft-agents-hosting-core==0.3.2
+microsoft-agents-hosting-aiohttp==0.3.2
+microsoft-agents-hosting-teams==0.3.2
+microsoft-agents-storage-blob==0.3.2
+microsoft-agents-storage-cosmos==0.3.2
+microsoft-agents-authentication-msal==0.3.2
