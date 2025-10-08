@@ -9,19 +9,10 @@ from botbuilder.schema import ChannelAccount
 from azure.identity.aio import AzureCliCredential
 from semantic_kernel.agents import AzureAIAgent, AzureAIAgentThread
 
-from src.utils.adaptive_card import (
-    create_table_adaptive_card,
-    create_text_adaptive_card,
-    create_error_adaptive_card,
-    create_adaptive_card_attachment
-)
-
-from src.demo.bot_demo.config import DefaultConfig
 
 # 載入環境變數
 load_dotenv()
 
-CONFIG = DefaultConfig()
 
 # 設定日誌記錄
 logging.basicConfig(
@@ -54,11 +45,14 @@ class MyBot(ActivityHandler):
     async def ask_agent(self, user_input: str):
         response = await self.agent.get_response(messages=user_input, thread=self.thread)
         logger.info(f"代理程式回覆: {response}")
+        self.thread = response.thread  # 更新對話執行緒
         return f'{response}'
+
 
     def reset_thread(self, user_id):
         if user_id in self.conversation_ids:
             del self.conversation_ids[user_id]
+        self.thread = None
         logger.info("對話已重置")
 
 
@@ -111,10 +105,3 @@ class MyBot(ActivityHandler):
         for member in members_added:
             if member.id != turn_context.activity.recipient.id:
                 await turn_context.send_activity("歡迎使用 Databricks Genie Bot！")
-
-    def get_text_card(self, message: str):
-        text_card = create_text_adaptive_card(message)
-        adaptive_card_attachment = create_adaptive_card_attachment(text_card)
-        message_with_card = MessageFactory.attachment(adaptive_card_attachment)
-
-        return message_with_card
