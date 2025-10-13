@@ -11,14 +11,14 @@ import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
-from src.demo.bot_demo.adaptive_card import (
+from src.samples.bot_demo.adaptive_card import (
     create_table_adaptive_card,
     create_text_adaptive_card,
     create_error_adaptive_card,
     create_adaptive_card_attachment
 )
 
-from src.demo.bot_demo.config import DefaultConfig
+from src.samples.bot_demo.config import DefaultConfig
 
 # 載入環境變數
 load_dotenv()

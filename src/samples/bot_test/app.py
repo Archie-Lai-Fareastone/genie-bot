@@ -13,7 +13,7 @@ from botbuilder.integration.aiohttp import (
 from botbuilder.schema import Activity, ActivityTypes
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
-from src.demo.bot_test.bot import MyBot
+from src.samples.bot_test.bot import MyBot
 
 # 建立適配器
 ADAPTER = CloudAdapter(ConfigurationBotFrameworkAuthentication(configuration={"port": 3978}))
