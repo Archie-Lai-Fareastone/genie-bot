@@ -1,6 +1,12 @@
 import os
+from typing import List, Any, NamedTuple
 from dotenv import load_dotenv
-from databricks.sdk.service.sql import StatementResponse
+
+
+class ColumnSchema(NamedTuple):
+    """欄位結構定義"""
+    name: str
+    type: str
 
 
 # 載入環境變數
@@ -18,22 +24,26 @@ def create_adaptive_card_attachment(adaptive_card: dict) -> dict:
 
 
 def create_table_adaptive_card(
-        statement_response: StatementResponse, 
+        schema_columns: List[ColumnSchema], 
+        data_array: List[List[Any]], 
+        total_row_count: int,
         query_description: str = "",
         sql_code: str = ""
     ) -> dict:
     """
     將 Genie 回傳結果轉換為 Adaptive Card
-    參數:
-        statement_response: Genie 回傳的查詢結果
+    
+    Args:
+        schema_columns: 欄位結構資訊列表 (ColumnSchema 物件)
+        data_array: 查詢結果資料陣列
+        total_row_count: 總行數
         query_description: 查詢描述（可選）
         sql_code: SQL 語句（可選）
+    Returns:
+        dict: Adaptive Card 結構
     """
 
     try:
-        schema = statement_response.manifest.schema
-        result_data = statement_response.result
-        
         # 建立 Adaptive Card 結構
         card = {
             "type": "AdaptiveCard",
@@ -101,17 +111,17 @@ def create_table_adaptive_card(
         # 加入統計資訊
         card["body"].append({
             "type": "TextBlock",
-            "text": f"共 {statement_response.manifest.total_row_count} 筆資料",
+            "text": f"共 {total_row_count} 筆資料",
             "size": "Small",
             "color": "Accent",
             "spacing": "Small"
         })
         
         # 建立表格
-        if schema.columns and result_data.data_array:
+        if schema_columns and data_array:
             # 限制顯示的欄位數量
-            display_columns = schema.columns[:MAX_CARD_COLUMNS]
-            max_rows = min(MAX_CARD_ROWS, len(result_data.data_array))
+            display_columns = schema_columns[:MAX_CARD_COLUMNS]
+            max_rows = min(MAX_CARD_ROWS, len(data_array))
             
             # 建立欄位定義
             table_columns = []
@@ -145,12 +155,12 @@ def create_table_adaptive_card(
             
             # 資料行
             for i in range(max_rows):
-                row = result_data.data_array[i]
+                row = data_array[i]
                 data_cells = []
                 
                 for j, (value, col_info) in enumerate(zip(row[:MAX_CARD_COLUMNS], display_columns)):
                     # 格式化數值
-                    formatted_value = format_value(value, col_info)
+                    formatted_value = format_value(value, col_info.type)
                     data_cells.append({
                         "type": "TableCell",
                         "style": "good",
@@ -182,17 +192,17 @@ def create_table_adaptive_card(
             
             # 如果有更多資料或欄位，顯示省略提示
             omitted_info = []
-            if len(result_data.data_array) > max_rows:
-                omitted_info.append(f"{len(result_data.data_array) - max_rows} 筆資料")
-            if len(schema.columns) > MAX_CARD_COLUMNS:
-                omitted_info.append(f"{len(schema.columns) - MAX_CARD_COLUMNS} 個欄位")
+            if len(data_array) > max_rows:
+                omitted_info.append(f"{len(data_array) - max_rows} 筆資料")
+            if len(schema_columns) > MAX_CARD_COLUMNS:
+                omitted_info.append(f"{len(schema_columns) - MAX_CARD_COLUMNS} 個欄位")
             
             if omitted_info:
                 card["body"].append({
                     "type": "TextBlock",
                     "text": f"... 還有 {' 和 '.join(omitted_info)}",
                     "size": "Small",
-                    "color": "Accent",
+                    "color": "default",
                     "horizontalAlignment": "Center",
                     "spacing": "Small"
                 })
@@ -203,19 +213,37 @@ def create_table_adaptive_card(
         return create_error_adaptive_card("無法建立查詢結果卡片")
 
 
-def format_value(value, col_info):
-    """根據欄位類型格式化數值"""
+def format_value(value: Any, column_type: str) -> str:
+    """
+    根據欄位類型格式化數值（大小寫不敏感）
+    
+    Args:
+        value: 要格式化的值
+        column_type: 欄位型別字串（支援大小寫不敏感）
+    Returns:
+        str: 格式化後的字串
+    
+    支援的型別：
+        - 浮點數：DECIMAL, DOUBLE, FLOAT, REAL, NUMERIC
+        - 整數：INT, BIGINT, LONG, INTEGER, SMALLINT, TINYINT
+        - 其他：以字串形式回傳
+    """
     if value is None:
         return "NULL"
     
     try:
-        if col_info.type_name.value in ["DECIMAL", "DOUBLE", "FLOAT"]:
+        column_type_upper = column_type.upper()
+        
+        # 浮點數型別
+        if column_type_upper in ["DECIMAL", "DOUBLE", "FLOAT", "REAL", "NUMERIC"]:
             return f"{float(value):,.2f}"
-        elif col_info.type_name.value in ["INT", "BIGINT", "LONG"]:
+        # 整數型別
+        elif column_type_upper in ["INT", "BIGINT", "LONG", "INTEGER", "SMALLINT", "TINYINT"]:
             return f"{int(value):,}"
+        # 其他型別（包含字串、日期等）
         else:
             return str(value)
-    except (ValueError, AttributeError):
+    except (ValueError, TypeError):
         return str(value)
 
 

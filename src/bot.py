@@ -1,7 +1,6 @@
-import json
 import os
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List
 import asyncio
 from dotenv import load_dotenv
 from botbuilder.core import ActivityHandler, TurnContext, MessageFactory
@@ -14,14 +13,17 @@ from semantic_kernel.agents import AzureAIAgent, AzureAIAgentThread
 load_dotenv()
 
 
-# 設定日誌記錄
-handler = logging.FileHandler("bot_conversations.log")
+# 設定日誌記錄：明確指定 UTF-8 編碼以避免在 Windows 等環境出現亂碼
+handler = logging.FileHandler("bot_conversations.log", mode="a", encoding="utf-8")
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         handler,
-        logging.StreamHandler()  # 輸出到控制台
+        stream_handler  # 輸出到控制台
     ]
 )
 
@@ -80,6 +82,8 @@ class MyBot(ActivityHandler):
             return
 
         try:
+            logger.info(f"使用者 {user_id}: {question}")
+
             output_message = await self.ask_agent(user_input=question, user_id=user_id)
             
             if isinstance(output_message, str):

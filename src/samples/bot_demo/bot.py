@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import Dict, List, Optional
 import asyncio
@@ -11,11 +10,12 @@ import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
-from src.samples.bot_demo.adaptive_card import (
+from src.utils.adaptive_card import (
     create_table_adaptive_card,
     create_text_adaptive_card,
     create_error_adaptive_card,
-    create_adaptive_card_attachment
+    create_adaptive_card_attachment,
+    ColumnSchema
 )
 
 from src.samples.bot_demo.config import DefaultConfig
@@ -124,35 +124,40 @@ async def ask_genie(
                                 sql_code = attachment.query.query
 
                             # 建立 Adaptive Card
-                            adaptive_card = create_table_adaptive_card(
-                                statement_response=attachment_query_result.statement_response, 
+                            statement_response = attachment_query_result.statement_response
+                            
+                            # 轉換欄位結構為統一格式
+                            schema_columns = [
+                                ColumnSchema(
+                                    name=col.name,
+                                    type=col.type_name.value if hasattr(col.type_name, 'value') else str(col.type_name)
+                                )
+                                for col in statement_response.manifest.schema.columns
+                            ]
+                            
+                            table_card = create_table_adaptive_card(
+                                schema_columns=schema_columns,
+                                data_array=statement_response.result.data_array,
+                                total_row_count=statement_response.manifest.total_row_count,
                                 query_description=query_description,
                                 sql_code=sql_code
                             )
                             return (
-                                json.dumps({"adaptive_card": adaptive_card}),
+                                table_card,
                                 initial_message.conversation_id,
                             )
                     except Exception as e:
                         logger.warning(f"無法取得 attachment 查詢結果 {attachment.attachment_id}: {str(e)}")
-                
-                # 如果沒有 attachment_id 或查詢失敗，回傳文字內容
-                if attachment.text and attachment.text.content:
-                    adaptive_card = create_text_adaptive_card(attachment.text.content)
-                    return (
-                        json.dumps({"adaptive_card": adaptive_card}),
-                        initial_message.conversation_id,
-                    )
 
-        # 如果沒有 attachments，回傳基本訊息內容
-        adaptive_card = create_text_adaptive_card(message_content.content or "沒有可用的回應內容")
-        return json.dumps({"adaptive_card": adaptive_card}), initial_message.conversation_id
+        # 如果沒有 attachments，回傳純文字內容
+        text_card = create_text_adaptive_card(message_content.content or "沒有可用的回應內容")
+        return (text_card, initial_message.conversation_id)
     
     except Exception as e:
         logger.error(f"Error in ask_genie: {str(e)}")
         error_card = create_error_adaptive_card("處理您的請求時發生錯誤。")
         return (
-            json.dumps({"adaptive_card": error_card}),
+            error_card,
             conversation_id if conversation_id else None,
         )
 
@@ -183,47 +188,20 @@ class MyBot(ActivityHandler):
                 )
                 return
 
-            answer, new_conversation_id = await ask_genie(
+            answer_card, new_conversation_id = await ask_genie(
                 question, CONFIG.DATABRICKS_SPACE_ID, conversation_id
             )
             self.conversation_ids[user_id] = new_conversation_id
             logger.info(f"更新使用者 {user_id} 的對話 ID: {new_conversation_id}")
 
-            answer_json = json.loads(answer)
+            card_attachment = create_adaptive_card_attachment(answer_card)
+            message_activity = MessageFactory.attachment(card_attachment)
+            await turn_context.send_activity(message_activity)
             
-            # 檢查是否有 Adaptive Card
-            if "adaptive_card" in answer_json:
-                # 建立 Adaptive Card 附件
-                adaptive_card_attachment = create_adaptive_card_attachment(answer_json["adaptive_card"])
-                message_with_card = MessageFactory.attachment(adaptive_card_attachment)
-                await turn_context.send_activity(message_with_card)
-            elif "error" in answer_json:
-                # 處理錯誤訊息
-                error_card = create_error_adaptive_card(answer_json["error"])
-                adaptive_card_attachment = create_adaptive_card_attachment(error_card)
-                message_with_card = MessageFactory.attachment(adaptive_card_attachment)
-                await turn_context.send_activity(message_with_card)
-            else:
-                # 處理舊格式的回應（向後相容）
-                message = answer_json.get("message", "沒有可用的回應")
-                text_card = create_text_adaptive_card(message)
-                adaptive_card_attachment = create_adaptive_card_attachment(text_card)
-                message_with_card = MessageFactory.attachment(adaptive_card_attachment)
-                await turn_context.send_activity(message_with_card)
-            
-        except json.JSONDecodeError:
-            await turn_context.send_activity(
-                "無法解碼伺服器回應。"
-            )
-        except ValueError as e:
-            logger.error(f"設定錯誤: {str(e)}")
-            await turn_context.send_activity(
-                f"設定錯誤：{str(e)}"
-            )
         except Exception as e:
             logger.error(f"處理訊息時發生錯誤: {str(e)}")
             await turn_context.send_activity(
-                "處理您的請求時發生錯誤。請檢查您的 Databricks 設定。"
+                f"處理您的請求時發生錯誤: {str(e)}"
             )
 
     async def on_members_added_activity(

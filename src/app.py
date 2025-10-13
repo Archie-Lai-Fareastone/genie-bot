@@ -1,6 +1,7 @@
 import sys
 import traceback
 from datetime import datetime, timezone
+from dotenv import load_dotenv
 import os
 from aiohttp import web
 from aiohttp.web import Request, Response, json_response
@@ -13,10 +14,12 @@ from botbuilder.integration.aiohttp import (
 from botbuilder.schema import Activity, ActivityTypes
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
-from src.samples.bot_test.bot import MyBot
+from bot import MyBot
 
 # 建立適配器
-ADAPTER = CloudAdapter(ConfigurationBotFrameworkAuthentication(configuration={"port": 3978}))
+load_dotenv()
+port = int(os.getenv("PORT", 3978))
+ADAPTER = CloudAdapter(ConfigurationBotFrameworkAuthentication(configuration={"port": port}))
 
 
 # 錯誤處理函式
