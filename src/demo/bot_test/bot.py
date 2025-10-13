@@ -15,21 +15,29 @@ load_dotenv()
 
 
 # 設定日誌記錄
+handler = logging.FileHandler("bot_conversations.log")
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
+        handler,
         logging.StreamHandler()  # 輸出到控制台
     ]
 )
+
+# 針對 Azure SDK 相關模組降低記錄層級
+logging.getLogger('azure').setLevel(logging.WARNING)
+logging.getLogger('azure.core').setLevel(logging.WARNING) 
+logging.getLogger('semantic_kernel').setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
 
 
 class MyBot(ActivityHandler):
     def __init__(self):
-        self.conversation_ids: Dict[str, str] = {}
+        self.thread_dict: Dict[str, AzureAIAgentThread] = {}
         self.agent: AzureAIAgent = None
-        self.thread: AzureAIAgentThread = None
+
 
     async def init_agent(self):
         credential = AzureCliCredential()
@@ -42,17 +50,18 @@ class MyBot(ActivityHandler):
         logger.info("AzureAIAgent 已初始化")
 
 
-    async def ask_agent(self, user_input: str):
-        response = await self.agent.get_response(messages=user_input, thread=self.thread)
-        logger.info(f"代理程式回覆: {response}")
-        self.thread = response.thread  # 更新對話執行緒
+    async def ask_agent(self, user_input: str, user_id: str):
+        thread = self.thread_dict.get(user_id, None)
+        response = await self.agent.get_response(messages=user_input, thread=thread)
+        logger.info(f"代理程式 {self.agent.definition.name}: {response}")
+        
+        self.thread_dict[user_id] = response.thread
         return f'{response}'
 
 
     def reset_thread(self, user_id):
-        if user_id in self.conversation_ids:
-            del self.conversation_ids[user_id]
-        self.thread = None
+        if user_id in self.thread_dict:
+            self.thread_dict[user_id] = None
         logger.info("對話已重置")
 
 
@@ -69,18 +78,9 @@ class MyBot(ActivityHandler):
             self.reset_thread(user_id)
             await turn_context.send_activity("對話已重新開始！請問您有什麼問題？")
             return
-        
-        # 繼續現有對話
-        conversation_id = self.conversation_ids.get(user_id, None)
-        logger.info(f"使用者 {user_id} 的現有對話 ID: {conversation_id}")
 
         try:
-            new_conversation_id = conversation_id 
-
-            self.conversation_ids[user_id] = new_conversation_id
-            logger.info(f"更新使用者 {user_id} 的對話 ID: {new_conversation_id}")
-
-            output_message = await self.ask_agent(user_input=question,)
+            output_message = await self.ask_agent(user_input=question, user_id=user_id)
             
             if isinstance(output_message, str):
                 # 純文字回覆
