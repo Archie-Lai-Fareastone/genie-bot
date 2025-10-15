@@ -14,7 +14,7 @@ from botbuilder.integration.aiohttp import (
 from botbuilder.schema import Activity, ActivityTypes
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
-from bot import MyBot
+from samples.bot_agent.bot import MyBot
 
 # 建立適配器
 load_dotenv()

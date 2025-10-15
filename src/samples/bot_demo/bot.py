@@ -96,9 +96,19 @@ async def ask_genie(
             initial_message.conversation_id,
             initial_message.message_id,
         )
+
+        print(f"message_content: {message_content}")
+
+        response_text = ""
         
         if message_content.attachments:
             for attachment in message_content.attachments:
+
+                # 如果附件有文字內容，累加到回應文本
+                if hasattr(attachment, 'text') and attachment.text:
+                    response_text += attachment.text.content + "\n"
+
+                # 如果附件有 attachment_id，則查詢結構化資料
                 if hasattr(attachment, 'attachment_id') and attachment.attachment_id:
                     try:
                         attachment_query_result = await loop.run_in_executor(
@@ -150,7 +160,7 @@ async def ask_genie(
                         logger.warning(f"無法取得 attachment 查詢結果 {attachment.attachment_id}: {str(e)}")
 
         # 如果沒有 attachments，回傳純文字內容
-        text_card = create_text_adaptive_card(message_content.content or "沒有可用的回應內容")
+        text_card = create_text_adaptive_card(response_text or "沒有可用的回應內容")
         return (text_card, initial_message.conversation_id)
     
     except Exception as e:
@@ -166,9 +176,15 @@ class MyBot(ActivityHandler):
     def __init__(self):
         self.conversation_ids: Dict[str, str] = {}
 
+    async def on_turn(self, turn_context: TurnContext):
+        logger.info(f"Bot on_turn 被呼叫，活動類型: {turn_context.activity.type}")
+        await super().on_turn(turn_context)
+
     async def on_message_activity(self, turn_context: TurnContext):
         question = turn_context.activity.text.strip()
         user_id = turn_context.activity.from_property.id
+        
+        logger.info(f"收到使用者 {user_id} 的訊息: {question}")
         
         # 檢查是否為重置命令
         if question.lower() in ['重新開始', 'reset', '新對話', 'new']:
@@ -182,12 +198,17 @@ class MyBot(ActivityHandler):
 
         try:
             # 檢查是否已設定必要的環境變數
+            logger.info(f"檢查環境變數 - HOST: {'已設定' if CONFIG.DATABRICKS_HOST else '未設定'}, "
+                       f"TOKEN: {'已設定' if CONFIG.DATABRICKS_TOKEN else '未設定'}, "
+                       f"SPACE_ID: {'已設定' if CONFIG.DATABRICKS_SPACE_ID else '未設定'}")
+            
             if not CONFIG.DATABRICKS_HOST or not CONFIG.DATABRICKS_TOKEN or not CONFIG.DATABRICKS_SPACE_ID:
-                await turn_context.send_activity(
-                    "錯誤：請確保已設定 DATABRICKS_HOST、DATABRICKS_TOKEN 和 DATABRICKS_SPACE_ID 環境變數。"
-                )
+                error_msg = "錯誤：請確保已設定 DATABRICKS_HOST、DATABRICKS_TOKEN 和 DATABRICKS_SPACE_ID 環境變數。"
+                logger.error(error_msg)
+                await turn_context.send_activity(error_msg)
                 return
 
+            logger.info(f"開始呼叫 ask_genie，問題: {question}")
             answer_card, new_conversation_id = await ask_genie(
                 question, CONFIG.DATABRICKS_SPACE_ID, conversation_id
             )
@@ -196,10 +217,11 @@ class MyBot(ActivityHandler):
 
             card_attachment = create_adaptive_card_attachment(answer_card)
             message_activity = MessageFactory.attachment(card_attachment)
+            logger.info("發送 adaptive card 回應")
             await turn_context.send_activity(message_activity)
             
         except Exception as e:
-            logger.error(f"處理訊息時發生錯誤: {str(e)}")
+            logger.error(f"處理訊息時發生錯誤: {str(e)}", exc_info=True)
             await turn_context.send_activity(
                 f"處理您的請求時發生錯誤: {str(e)}"
             )
