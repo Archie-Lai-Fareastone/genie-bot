@@ -97,8 +97,6 @@ async def ask_genie(
             initial_message.message_id,
         )
 
-        print(f"message_content: {message_content}")
-
         response_text = ""
         
         if message_content.attachments:
