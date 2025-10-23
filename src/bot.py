@@ -1,29 +1,27 @@
 import logging
 from typing import Dict, List, Optional
 import asyncio
+import os
 from dotenv import load_dotenv
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.dashboards import GenieAPI
 from botbuilder.core import ActivityHandler, TurnContext, MessageFactory
 from botbuilder.schema import ChannelAccount
-import sys
-import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 from src.utils.adaptive_card import (
-    create_table_adaptive_card,
-    create_text_adaptive_card,
-    create_error_adaptive_card,
-    create_adaptive_card_attachment,
+    create_table_card,
+    create_text_card,
+    create_error_card,
     ColumnSchema
 )
 
-from src.samples.bot_demo.config import DefaultConfig
 
 # 載入環境變數
 load_dotenv()
 
-CONFIG = DefaultConfig()
+DATABRICKS_HOST = os.environ.get("DATABRICKS_HOST", "")
+DATABRICKS_TOKEN = os.environ.get("DATABRICKS_TOKEN", "")
+DATABRICKS_SPACE_ID = os.environ.get("DATABRICKS_SPACE_ID", "")
 
 # 設定日誌記錄
 logging.basicConfig(
@@ -44,12 +42,12 @@ def get_databricks_clients():
     global _workspace_client, _genie_api
     
     if _workspace_client is None:
-        if not CONFIG.DATABRICKS_HOST or not CONFIG.DATABRICKS_TOKEN:
+        if not DATABRICKS_HOST or not DATABRICKS_TOKEN:
             raise ValueError("DATABRICKS_HOST 和 DATABRICKS_TOKEN 環境變數必須設定")
         
         _workspace_client = WorkspaceClient(
-            host=CONFIG.DATABRICKS_HOST, 
-            token=CONFIG.DATABRICKS_TOKEN
+            host=DATABRICKS_HOST, 
+            token=DATABRICKS_TOKEN
         )
         _genie_api = GenieAPI(_workspace_client.api_client)
     
@@ -131,10 +129,8 @@ async def ask_genie(
                             if attachment.query and attachment.query.query:
                                 sql_code = attachment.query.query
 
-                            # 建立 Adaptive Card
-                            statement_response = attachment_query_result.statement_response
-                            
                             # 轉換欄位結構為統一格式
+                            statement_response = attachment_query_result.statement_response
                             schema_columns = [
                                 ColumnSchema(
                                     name=col.name,
@@ -143,7 +139,7 @@ async def ask_genie(
                                 for col in statement_response.manifest.schema.columns
                             ]
                             
-                            table_card = create_table_adaptive_card(
+                            table_card = create_table_card(
                                 schema_columns=schema_columns,
                                 data_array=statement_response.result.data_array,
                                 total_row_count=statement_response.manifest.total_row_count,
@@ -158,12 +154,12 @@ async def ask_genie(
                         logger.warning(f"無法取得 attachment 查詢結果 {attachment.attachment_id}: {str(e)}")
 
         # 如果沒有 attachments，回傳純文字內容
-        text_card = create_text_adaptive_card(response_text or "沒有可用的回應內容")
+        text_card = create_text_card(response_text or "沒有可用的回應內容")
         return (text_card, initial_message.conversation_id)
     
     except Exception as e:
         logger.error(f"Error in ask_genie: {str(e)}")
-        error_card = create_error_adaptive_card("處理您的請求時發生錯誤。")
+        error_card = create_error_card("處理您的請求時發生錯誤。")
         return (
             error_card,
             conversation_id if conversation_id else None,
@@ -196,11 +192,11 @@ class MyBot(ActivityHandler):
 
         try:
             # 檢查是否已設定必要的環境變數
-            logger.info(f"檢查環境變數 - HOST: {'已設定' if CONFIG.DATABRICKS_HOST else '未設定'}, "
-                       f"TOKEN: {'已設定' if CONFIG.DATABRICKS_TOKEN else '未設定'}, "
-                       f"SPACE_ID: {'已設定' if CONFIG.DATABRICKS_SPACE_ID else '未設定'}")
+            logger.info(f"檢查環境變數 - HOST: {'已設定' if DATABRICKS_HOST else '未設定'}, "
+                       f"TOKEN: {'已設定' if DATABRICKS_TOKEN else '未設定'}, "
+                       f"SPACE_ID: {'已設定' if DATABRICKS_SPACE_ID else '未設定'}")
             
-            if not CONFIG.DATABRICKS_HOST or not CONFIG.DATABRICKS_TOKEN or not CONFIG.DATABRICKS_SPACE_ID:
+            if not DATABRICKS_HOST or not DATABRICKS_TOKEN or not DATABRICKS_SPACE_ID:
                 error_msg = "錯誤：請確保已設定 DATABRICKS_HOST、DATABRICKS_TOKEN 和 DATABRICKS_SPACE_ID 環境變數。"
                 logger.error(error_msg)
                 await turn_context.send_activity(error_msg)
@@ -208,13 +204,12 @@ class MyBot(ActivityHandler):
 
             logger.info(f"開始呼叫 ask_genie，問題: {question}")
             answer_card, new_conversation_id = await ask_genie(
-                question, CONFIG.DATABRICKS_SPACE_ID, conversation_id
+                question, DATABRICKS_SPACE_ID, conversation_id
             )
             self.conversation_ids[user_id] = new_conversation_id
             logger.info(f"更新使用者 {user_id} 的對話 ID: {new_conversation_id}")
 
-            card_attachment = create_adaptive_card_attachment(answer_card)
-            message_activity = MessageFactory.attachment(card_attachment)
+            message_activity = MessageFactory.attachment(answer_card)
             logger.info("發送 adaptive card 回應")
             await turn_context.send_activity(message_activity)
             

@@ -8,14 +8,13 @@ from fastapi.responses import JSONResponse
 from botbuilder.core import TurnContext, BotFrameworkAdapter, BotFrameworkAdapterSettings
 from botbuilder.schema import Activity, ActivityTypes
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
-from src.samples.bot_demo.bot import MyBot
-from src.samples.bot_demo.config import DefaultConfig
+from src.bot import MyBot
 
-CONFIG = DefaultConfig()
 
 # 建立適配器設定
-SETTINGS = BotFrameworkAdapterSettings(CONFIG.APP_ID, CONFIG.APP_PASSWORD)
+APP_ID = os.environ.get("MicrosoftAppId", "")
+APP_PASSWORD = os.environ.get("MicrosoftAppPassword", "")
+SETTINGS = BotFrameworkAdapterSettings(APP_ID, APP_PASSWORD)
 
 # 建立適配器
 ADAPTER = BotFrameworkAdapter(SETTINGS)
@@ -82,4 +81,5 @@ async def messages(request: Request):
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="localhost", port=CONFIG.PORT)
+    PORT = int(os.environ.get("PORT", 3978))
+    uvicorn.run(app, host="localhost", port=PORT)

@@ -15,7 +15,7 @@ load_dotenv()
 MAX_CARD_ROWS = int(os.getenv("MAX_CARD_ROWS", 10))
 MAX_CARD_COLUMNS = int(os.getenv("MAX_CARD_COLUMNS", 10))
 
-def create_adaptive_card_attachment(adaptive_card: dict) -> dict:
+def create_card_attachment(adaptive_card: dict) -> dict:
     """建立 Adaptive Card 附件"""
     return {
         "contentType": "application/vnd.microsoft.card.adaptive",
@@ -23,7 +23,7 @@ def create_adaptive_card_attachment(adaptive_card: dict) -> dict:
     }
 
 
-def create_table_adaptive_card(
+def create_table_card(
         schema_columns: List[ColumnSchema], 
         data_array: List[List[Any]], 
         total_row_count: int,
@@ -207,10 +207,10 @@ def create_table_adaptive_card(
                     "spacing": "Small"
                 })
         
-        return card
+        return create_card_attachment(card)
     
     except Exception as e:
-        return create_error_adaptive_card("無法建立查詢結果卡片")
+        return create_error_card("無法建立查詢結果卡片")
 
 
 def format_value(value: Any, column_type: str) -> str:
@@ -247,9 +247,9 @@ def format_value(value: Any, column_type: str) -> str:
         return str(value)
 
 
-def create_error_adaptive_card(error_message: str) -> dict:
+def create_error_card(error_message: str) -> dict:
     """建立錯誤訊息的 Adaptive Card"""
-    return {
+    card = {
         "type": "AdaptiveCard",
         "version": "1.5",
         "body": [
@@ -269,10 +269,12 @@ def create_error_adaptive_card(error_message: str) -> dict:
         ]
     }
 
+    return create_card_attachment(card)
 
-def create_text_adaptive_card(message: str) -> dict:
+
+def create_text_card(message: str) -> dict:
     """建立純文字訊息的 Adaptive Card"""
-    return {
+    card = {
         "type": "AdaptiveCard",
         "version": "1.5",
         "body": [
@@ -283,3 +285,5 @@ def create_text_adaptive_card(message: str) -> dict:
             }
         ]
     }
+
+    return create_card_attachment(card)
