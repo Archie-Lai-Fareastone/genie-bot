@@ -43,8 +43,13 @@ def chart_to_base64(
     Raises:
         ValueError: If an unsupported chart_type is provided.
     """
-    labs = list(labels)
-    vals = list(values)
+    labs = [str(label) for label in labels]
+    # 確保將數值轉換為 float，避免字串導致的問題
+    try:
+        vals = [float(val) for val in values]
+    except (ValueError, TypeError) as e:
+        raise ValueError(f"無法將數值轉換為浮點數: {e}")
+    
     n = len(labs)
     
     # Generate distinct colors using tab20 colormap
@@ -81,6 +86,8 @@ def chart_to_base64(
             ax.set_xticklabels([_truncate_label(lab) for lab in labs], rotation=45, ha='right')
             ax.set_xlabel("Category")
             ax.set_ylabel("Value")
+            # 加入格線以便更容易讀取數值
+            ax.grid(True, axis='y', linestyle='--', alpha=0.3)
             fig.tight_layout()
             fig.savefig(buf, format="png", bbox_inches="tight")
         elif chart_type == "line":

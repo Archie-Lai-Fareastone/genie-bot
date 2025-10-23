@@ -65,6 +65,7 @@ async def ask_genie(
         query_description = ""
         sql_code = ""
         schema_columns = []
+        data_array = []
         
         loop = asyncio.get_running_loop()
         if conversation_id is None:
@@ -139,12 +140,15 @@ async def ask_genie(
                                 )
                                 for col in statement_response.manifest.schema.columns
                             ]
+
+                            data_array = statement_response.result.data_array
+
                     except Exception as e:
                         logger.warning(f"無法取得 attachment 查詢結果 {attachment.attachment_id}: {str(e)}")
 
         response_card = create_response_card(
             schema_columns=schema_columns,
-            data_array=statement_response.result.data_array,
+            data_array=data_array,
             total_row_count=statement_response.manifest.total_row_count,
             query_description=query_description or response_text or "沒有可用的回應內容",
             sql_code=sql_code

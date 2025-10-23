@@ -2,6 +2,7 @@ import os
 from typing import List, Any, NamedTuple
 from dotenv import load_dotenv
 
+from src.utils.generate_chart_base64 import chart_to_base64
 
 class ColumnSchema(NamedTuple):
     """欄位結構定義"""
@@ -14,6 +15,27 @@ load_dotenv()
 
 MAX_CARD_ROWS = int(os.getenv("MAX_CARD_ROWS", 10))
 MAX_CARD_COLUMNS = int(os.getenv("MAX_CARD_COLUMNS", 10))
+
+
+def convert_rows_to_columns(data_array: List[List[Any]]) -> List[List[Any]]:
+    """
+    將二維陣列（列為主）轉換為以欄位為主的一維陣列列表
+    
+    Args:
+        data_array: 查詢結果資料陣列 [[row1_col1, row1_col2, ...], [row2_col1, row2_col2, ...], ...]
+    Returns:
+        List[List[Any]]: 以欄位為主的陣列列表 [[row1_col1, row2_col1, ...], [row1_col2, row2_col2, ...], ...]
+    
+    Example:
+        >>> data = [[1, 'Alice'], [2, 'Bob'], [3, 'Charlie']]
+        >>> convert_rows_to_columns(data)
+        [[1, 2, 3], ['Alice', 'Bob', 'Charlie']]
+    """
+    if not data_array or not data_array[0]:
+        return []
+    
+    # 使用 zip 轉置矩陣
+    return [list(col) for col in zip(*data_array)]
 
 
 def create_card_attachment(adaptive_card: dict) -> dict:
@@ -111,7 +133,29 @@ def create_response_card(
                 card["body"].append(omitted_info_block)
 
         # 加入圖表
-        # TODO
+        if data_array and len(data_array) > 0:
+            transformed_data = convert_rows_to_columns(data_array)
+            title_array = transformed_data[0] if transformed_data else []
+            content_array = transformed_data[1] if len(transformed_data) > 1 else []
+            image_base64 = chart_to_base64(
+                values=content_array,
+                labels=title_array,
+                chart_type="vertical_bar"
+            )
+
+            if image_base64:
+                card["body"].append({
+                    "type": "TextBlock",
+                    "text": "圖表",
+                    "weight": "Bolder",
+                    "size": "Medium",
+                    "spacing": "Medium"
+                })
+                card["body"].append({
+                    "type": "Image",
+                    "url": image_base64,
+                    "size": "Auto",
+                })
         
         return create_card_attachment(card)
     
