@@ -9,8 +9,7 @@ from botbuilder.core import ActivityHandler, TurnContext, MessageFactory
 from botbuilder.schema import ChannelAccount
 
 from src.utils.adaptive_card import (
-    create_table_card,
-    create_text_card,
+    create_response_card,
     create_error_card,
     ColumnSchema
 )
@@ -60,6 +59,12 @@ async def ask_genie(
     try:
         # 取得 Databricks 客戶端
         workspace_client, genie_api = get_databricks_clients()
+
+        # genie 回覆資料
+        response_text = ""
+        query_description = ""
+        sql_code = ""
+        schema_columns = []
         
         loop = asyncio.get_running_loop()
         if conversation_id is None:
@@ -94,8 +99,6 @@ async def ask_genie(
             initial_message.conversation_id,
             initial_message.message_id,
         )
-
-        response_text = ""
         
         if message_content.attachments:
             for attachment in message_content.attachments:
@@ -120,12 +123,10 @@ async def ask_genie(
                         if attachment_query_result and attachment_query_result.statement_response:
 
                             # 回答描述
-                            query_description = ""
                             if attachment.query and attachment.query.description:
                                 query_description = attachment.query.description
 
                             # SQL 語句
-                            sql_code = ""
                             if attachment.query and attachment.query.query:
                                 sql_code = attachment.query.query
 
@@ -138,24 +139,18 @@ async def ask_genie(
                                 )
                                 for col in statement_response.manifest.schema.columns
                             ]
-                            
-                            table_card = create_table_card(
-                                schema_columns=schema_columns,
-                                data_array=statement_response.result.data_array,
-                                total_row_count=statement_response.manifest.total_row_count,
-                                query_description=query_description,
-                                sql_code=sql_code
-                            )
-                            return (
-                                table_card,
-                                initial_message.conversation_id,
-                            )
                     except Exception as e:
                         logger.warning(f"無法取得 attachment 查詢結果 {attachment.attachment_id}: {str(e)}")
 
-        # 如果沒有 attachments，回傳純文字內容
-        text_card = create_text_card(response_text or "沒有可用的回應內容")
-        return (text_card, initial_message.conversation_id)
+        response_card = create_response_card(
+            schema_columns=schema_columns,
+            data_array=statement_response.result.data_array,
+            total_row_count=statement_response.manifest.total_row_count,
+            query_description=query_description or response_text or "沒有可用的回應內容",
+            sql_code=sql_code
+        )
+
+        return (response_card, initial_message.conversation_id)
     
     except Exception as e:
         logger.error(f"Error in ask_genie: {str(e)}")
@@ -203,13 +198,13 @@ class MyBot(ActivityHandler):
                 return
 
             logger.info(f"開始呼叫 ask_genie，問題: {question}")
-            answer_card, new_conversation_id = await ask_genie(
+            response_card, new_conversation_id = await ask_genie(
                 question, DATABRICKS_SPACE_ID, conversation_id
             )
             self.conversation_ids[user_id] = new_conversation_id
             logger.info(f"更新使用者 {user_id} 的對話 ID: {new_conversation_id}")
 
-            message_activity = MessageFactory.attachment(answer_card)
+            message_activity = MessageFactory.attachment(response_card)
             logger.info("發送 adaptive card 回應")
             await turn_context.send_activity(message_activity)
             
