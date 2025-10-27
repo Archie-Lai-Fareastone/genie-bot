@@ -7,7 +7,7 @@ Connector Response 模組
 from typing import Optional, List, Any
 from dataclasses import dataclass
 
-from utils.adaptive_card import ColumnSchema
+from src.utils.adaptive_card import ColumnSchema
 
 
 @dataclass

@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.dashboards import GenieAPI
 
-from utils.adaptive_card import (
+from src.utils.adaptive_card import (
     create_response_card,
     create_error_card,
     create_text_card,

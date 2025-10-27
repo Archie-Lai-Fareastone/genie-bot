@@ -4,8 +4,8 @@ from typing import List, Any, NamedTuple, TYPE_CHECKING
 from dotenv import load_dotenv
 
 from src.utils.generate_chart_base64 import chart_to_base64
-from utils.adaptive_card_formatter import format_value, convert_rows_to_columns
-from utils.adaptive_card_module import (
+from src.utils.adaptive_card_formatter import format_value, convert_rows_to_columns
+from src.utils.adaptive_card_module import (
     create_card_title,
     create_card_content,
     create_card_annotation,

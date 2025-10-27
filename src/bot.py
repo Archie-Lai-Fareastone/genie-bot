@@ -3,7 +3,7 @@ from botbuilder.core import ActivityHandler, TurnContext, MessageFactory
 from botbuilder.schema import ChannelAccount
 
 from src.connectors.genie_connector import GenieConnector
-from utils.adaptive_card import create_menu_card
+from src.utils.adaptive_card import create_menu_card
 from src.utils.logger_config import get_logger
 
 # 取得 logger 實例
