@@ -1,8 +1,8 @@
 import os
-import json
 from typing import List, Any, NamedTuple, TYPE_CHECKING
 from dotenv import load_dotenv
 
+from src.config.genie_space_config import get_all_genie_configs
 from src.utils.generate_chart_base64 import chart_to_base64
 from src.utils.adaptive_card_formatter import format_value, convert_rows_to_columns
 from src.utils.adaptive_card_module import (
@@ -138,29 +138,21 @@ def create_text_card(message: str) -> dict:
 def create_menu_card():
     """建立主選單卡片"""
     
-    # 讀取 Genie Space 設定檔案
-    config_path = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)),
-        "config",
-        "genie_space_config.json"
-    )
+    # 讀取 Genie Space 設定
+    genie_spaces = get_all_genie_configs()
     
-    try:
-        with open(config_path, "r", encoding="utf-8") as f:
-            genie_spaces = json.load(f)
-            
-        # 將設定檔案轉換為選項列表
-        choices = [
-            {
-                "title": space_info['name'],
-                "value": space_id
-            }
-            for space_id, space_info in genie_spaces.items()
-        ]
-    except FileNotFoundError:
+    # 將設定轉換為選項列表
+    choices = [
+        {
+            "title": space_info['name'],
+            "value": space_id
+        }
+        for space_id, space_info in genie_spaces.items()
+    ]
+    
+    if not choices:
         choices = [{"title": "無法載入 Genie Space 設定", "value": ""}]
-    except Exception as e:
-        choices = [{"title": f"載入設定時發生錯誤: {str(e)}", "value": ""}]
+    
     card = {
         "type": "AdaptiveCard",
         "version": "1.5",

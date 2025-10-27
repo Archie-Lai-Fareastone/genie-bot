@@ -5,6 +5,7 @@ from botbuilder.schema import ChannelAccount
 from src.connectors.genie_connector import GenieConnector
 from src.utils.adaptive_card import create_menu_card
 from src.utils.logger_config import get_logger
+from src.config.genie_space_config import get_genie_config
 
 # 取得 logger 實例
 logger = get_logger(__name__)
@@ -19,7 +20,7 @@ class MyBot(ActivityHandler):
     
     def __init__(self):
         """初始化 MyBot，建立 GenieConnector 實例"""
-        self.conversation_ids: Dict[str, str] = {}
+        self.conversation_ids: Dict[str, str] = {} # 儲存使用者對話 ID
         self.connector = GenieConnector()
         logger.info("MyBot 已初始化，GenieConnector 已建立")
 
@@ -39,25 +40,27 @@ class MyBot(ActivityHandler):
         if question.lower() in ['重新開始', 'reset', '新對話', 'new']:
             if user_id in self.conversation_ids:
                 del self.conversation_ids[user_id]
-            await turn_context.send_activity("對話已重新開始！請問要詢問什麼問題？")
-            return
+            message_activity = MessageFactory.attachment(create_menu_card())
+            await turn_context.send_activity(message_activity)
         
         conversation_id = self.conversation_ids.get(user_id, None)
         logger.info(f"使用者 {user_id} 的現有對話 ID: {conversation_id}")
 
-        # 檢查使用者提交資料
+        # 檢查是否為使用者提交資料
         if turn_context.activity.value:
             submitted_data = turn_context.activity.value
-
             # 檢查是否有選擇 Genie Space
             if "genie_space_id" in submitted_data:
-                space_id = submitted_data.get("genie_space_id", "")
+                space_id = submitted_data["genie_space_id"]
                 self.connector.set_space_id(space_id)
                 logger.info(f"使用者選擇的 Genie Space ID: {space_id}")
-                await turn_context.send_activity(
-                    "您選擇的 Genie Space 已設定完成。"
-                )
-            return
+                
+                # 取得 Genie Space 名稱
+                genie_config = get_genie_config(space_id)
+                space_name = genie_config['name'] if genie_config else "未知"
+                
+                await turn_context.send_activity(f"已選擇：{space_name}")
+                return
 
         # 詢問 Connector
         try:

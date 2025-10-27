@@ -12,7 +12,6 @@
 import asyncio
 import sys
 import os
-import json
 from typing import Dict
 from dotenv import load_dotenv
 from databricks.sdk import WorkspaceClient
@@ -21,6 +20,7 @@ from azure.ai.agents.models import (FunctionTool, ToolSet)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 from samples.foundry_demo.project_operations import create_agent, get_project_client
 from samples.foundry_demo.genie_connections import setup_genie_functions
+from src.config.genie_space_config import get_all_genie_configs
 
 
 load_dotenv()
@@ -28,7 +28,6 @@ load_dotenv()
 async def main():
     # Environment variables
     databricks_entra_id_audience_scope = os.getenv("DATABRICKS_ENTRA_ID_AUDIENCE_SCOPE")
-    path_to_genie_space_config = 'src/config/genie_space_config.json'
 
 
     # Initialize clients
@@ -42,9 +41,8 @@ async def main():
     print(f"Databricks workspace client created")
 
 
-    # List project connections
-    with open(path_to_genie_space_config, 'r', encoding='utf-8') as f:
-        genie_space_config = json.load(f)
+    # 讀取 Genie Space 設定
+    genie_space_config = get_all_genie_configs()
     
     genie_configs: Dict[str, Dict[str, str]] = {}  # {"genie_space_id": {"name": "函式名稱", "description": "函式描述"}}
     

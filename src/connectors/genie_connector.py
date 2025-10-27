@@ -81,7 +81,7 @@ class GenieConnector:
         message_content,
         conversation_id: str,
         message_id: str
-    ) -> Optional[Tuple[str, str]]:
+    ) -> Optional[dict]:
         """
         處理訊息附件內容
         
@@ -91,7 +91,7 @@ class GenieConnector:
             message_id: 訊息 ID
             
         Returns:
-            Optional[Tuple[str, str]]: 如果需要提前回傳，則回傳 (回應卡片, 對話 ID)，否則回傳 None
+            Optional[dict]: 如果需要提前回傳，則回傳卡片，否則回傳 None
         """
         if not message_content.attachments:
             return None
@@ -140,10 +140,9 @@ class GenieConnector:
                         self.response.total_row_count = statement_response.manifest.total_row_count
                 
                 except Exception as e:
-                    logger.warning(f"無法取得 attachment 查詢結果 {attachment.attachment_id}: {str(e)}")
                     # 回傳純文字內容
                     if self.response.response_text:
-                        return create_text_card(self.response.response_text), conversation_id
+                        return create_text_card(self.response.response_text)
         
         return None
     
@@ -196,7 +195,7 @@ class GenieConnector:
         self,
         question: str,
         conversation_id: Optional[str] = None
-    ) -> Tuple[str, str]:
+    ) -> Tuple[dict, str]:
         """
         Args:
             question: 要詢問的問題
@@ -228,19 +227,20 @@ class GenieConnector:
             )
             
             # 處理附件
-            early_return = await self._process_message_attachments(
+            text_card = await self._process_message_attachments(
                 message_content,
                 initial_message.conversation_id,
                 initial_message.message_id
             )
-            # 回傳純文字內容
-            if early_return:
-                return early_return
-            
-            # 建立回應卡片
-            response_card = create_response_card(self.response)
-
-            return (response_card, initial_message.conversation_id)
+            # 回傳純文字內容 或 建立回應卡片
+            if text_card:
+                return (
+                    text_card,
+                    initial_message.conversation_id
+                )
+            else:
+                response_card = create_response_card(self.response)
+                return (response_card, initial_message.conversation_id)
         
         except Exception as e:
             logger.error(f"GenieConnector.ask_question 發生錯誤: {str(e)}")
