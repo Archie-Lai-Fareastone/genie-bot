@@ -30,3 +30,6 @@ botframework-streaming==4.17.0
 # FastAPI
 fastapi
 uvicorn[standard]
+
+# Production server
+gunicorn==22.0.0
