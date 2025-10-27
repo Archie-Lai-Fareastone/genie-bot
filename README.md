@@ -45,5 +45,20 @@ az login --use-device-code
 ```bash
 az account show
 ```
+## 使用 Bot Framework Emulator 測試機器人
 
+[Bot Framework Emulator](https://github.com/microsoft/botframework-emulator) 是一個桌面應用程式，允許機器人開發者在 localhost 上測試和除錯他們的機器人。
+
+- 從[這裡](https://github.com/Microsoft/BotFramework-Emulator/releases)安裝 Bot Framework Emulator 版本 4.3.0 或更高版本
+
+### 使用 Bot Framework Emulator 連接到機器人
+
+- 啟動 Bot Framework Emulator
+- 輸入機器人 URL：`http://localhost:3978/api/messages`
+
+## 參考資料
+
+- [Bot Framework 文件](https://docs.botframework.com)
+- [Databricks Genie API 文件](https://docs.databricks.com/en/genie/index.html)
+- [Azure Bot Service 簡介](https://docs.microsoft.com/azure/bot-service/bot-service-overview-introduction?view=azure-bot-service-4.0)
 

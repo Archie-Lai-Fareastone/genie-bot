@@ -6,7 +6,7 @@ Databricks Genie Space Connector
 
 import os
 import asyncio
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 from dotenv import load_dotenv
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.dashboards import GenieAPI
@@ -19,6 +19,7 @@ from src.utils.adaptive_card import (
 )
 from src.utils.logger_config import get_logger
 from src.connectors.response import ConnectorResponse
+from src.connectors.databricks_api_client import DatabricksApiClient
 
 # 載入環境變數
 load_dotenv()
@@ -44,6 +45,7 @@ class GenieConnector:
         self._workspace_client: Optional[WorkspaceClient] = None
         self._genie_api: Optional[GenieAPI] = None
         self._space_id: Optional[str] = None
+        self._databricks_api_client: Optional[DatabricksApiClient] = None
         self.response: ConnectorResponse = ConnectorResponse()
         
         logger.info("GenieConnector 已初始化")
@@ -68,6 +70,25 @@ class GenieConnector:
             )
             self._genie_api = GenieAPI(self._workspace_client.api_client)
             logger.info("Databricks 客戶端已初始化")
+    
+    def _setup_databricks_api_client(self):
+        """
+        延遲初始化 DatabricksTableHistory API
+        
+        Returns:
+            DatabricksApiClient: Table History API 實例
+        """
+        if self._databricks_api_client is None:
+            if not self.databricks_host or not self.databricks_token:
+                raise ValueError("DATABRICKS_HOST 和 DATABRICKS_TOKEN 環境變數必須設定")
+            
+            self._databricks_api_client = DatabricksApiClient(
+                host=self.databricks_host,
+                token=self.databricks_token
+            )
+            logger.info("DatabricksTableHistory API 已初始化")
+        
+        return self._databricks_api_client
     
     def set_space_id(self, space_id: str) -> None:
         self._space_id = space_id
@@ -249,3 +270,30 @@ class GenieConnector:
                 error_card,
                 conversation_id if conversation_id else None,
             )
+    
+    
+    def get_latest_table_history(
+        self,
+        catalog: str,
+        schema: str,
+        table: str,
+        warehouse_id: str
+    ) -> Optional[Dict]:
+        """
+        取得 Databricks 資料表的最新歷史記錄
+        
+        Args:
+            catalog: Catalog 名稱
+            schema: Schema 名稱
+            table: 資料表名稱
+            warehouse_id: SQL Warehouse ID
+            
+        Returns:
+            Optional[Dict]: 最新的歷史記錄，如果發生錯誤則回傳 None
+        """
+        try:
+            api = self._setup_databricks_api_client()
+            return api.get_latest_history(catalog, schema, table, warehouse_id)
+        except Exception as e:
+            logger.error(f"GenieConnector.get_latest_table_history 發生錯誤: {str(e)}")
+            return None
