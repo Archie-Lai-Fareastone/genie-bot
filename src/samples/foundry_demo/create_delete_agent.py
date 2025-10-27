@@ -15,7 +15,7 @@ import os
 import asyncio
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
-from src.utils.project_operations import create_agent, delete_agent
+from samples.foundry_demo.project_operations import create_agent, delete_agent
 
 
 async def main():

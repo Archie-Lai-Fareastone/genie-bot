@@ -1,5 +1,5 @@
 """
-說明: 提供與 Databricks Genie 互動的工具函式，包含建立連接、詢問問題和批次建立函式等功能
+說明: 提供 Azure AI Foundry 與 Databricks Genie 互動的工具函式，包含建立連接、詢問問題和批次建立函式等功能
 
 重要元件:
 - genie_to_object: 將 GenieResponse 物件轉換為字典格式

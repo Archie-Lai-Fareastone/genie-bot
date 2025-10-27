@@ -1,5 +1,4 @@
 import sys
-import traceback
 from datetime import datetime, timezone
 import os
 import uvicorn
@@ -8,7 +7,14 @@ from fastapi.responses import JSONResponse
 from botbuilder.core import TurnContext, BotFrameworkAdapter, BotFrameworkAdapterSettings
 from botbuilder.schema import Activity, ActivityTypes
 
+from src.utils.logger_config import setup_logging, get_logger
 from src.bot import MyBot
+
+# 初始化日誌系統（應用程式啟動時執行一次）
+setup_logging()
+
+# 取得 logger 實例
+logger = get_logger(__name__)
 
 
 # 建立適配器設定
@@ -24,8 +30,7 @@ app = FastAPI()
 
 # 錯誤處理函式
 async def on_error(context: TurnContext, error: Exception):
-    print(f"\n [on_turn_error] 未處理的錯誤: {error}", file=sys.stderr)
-    traceback.print_exc()
+    logger.error(f"[on_turn_error] 未處理的錯誤: {error}", exc_info=True)
 
     await context.send_activity("機器人遇到了錯誤或錯誤。")
     await context.send_activity("要繼續執行此機器人，請修復機器人原始程式碼。")
@@ -66,8 +71,8 @@ async def messages(request: Request):
         
         # 建立回調函數來處理 turn context
         async def bot_logic(turn_context: TurnContext):
-            print(f"DEBUG: bot_logic 被呼叫，活動類型: {turn_context.activity.type}")
-            print(f"DEBUG: 活動文字: {turn_context.activity.text}")
+            logger.debug(f"bot_logic 被呼叫，活動類型: {turn_context.activity.type}")
+            logger.debug(f"活動文字: {turn_context.activity.text}")
             await BOT.on_turn(turn_context)
         
         # 處理機器人請求
@@ -76,10 +81,10 @@ async def messages(request: Request):
         return JSONResponse(content={}, status_code=200)
         
     except Exception as e:
-        print(f"處理請求時發生錯誤: {str(e)}", file=sys.stderr)
-        traceback.print_exc()
+        logger.error(f"處理請求時發生錯誤: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 if __name__ == "__main__":
     PORT = int(os.environ.get("PORT", 3978))
+    logger.info(f"啟動 Bot 服務，監聽埠號: {PORT}")
     uvicorn.run(app, host="localhost", port=PORT)
