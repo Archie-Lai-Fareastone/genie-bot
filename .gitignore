@@ -254,3 +254,6 @@ temp/
 
 # Github copilot
 .github/
+
+# MLflow
+/mlruns

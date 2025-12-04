@@ -28,24 +28,11 @@ pip freeze > requirements.txt
 ```
 
 
-# 環境變數
+## 環境變數
 * 建立 .env 檔案，確保 .env 檔案在 .gitignore 內
 * 不要讓 github copilot 讀取到: 可以建立 `.github/copilot-instructions.md` 檔案
 
-
-# Azure 驗證
-* 如果需要在 ai foundry 建立、刪除 agent，使用 [Azure CLI](https://learn.microsoft.com/zh-tw/cli/azure/install-azure-cli?view=azure-cli-latest) 在本機登入 Azure
-
-* 登入 Azure
-```bash
-az login --use-device-code
-```
-
-* 檢查目前登入狀態
-```bash
-az account show
-```
-## 使用 Bot Framework Emulator 測試機器人
+# Bot Framework Emulator
 
 [Bot Framework Emulator](https://github.com/microsoft/botframework-emulator) 是一個桌面應用程式，允許機器人開發者在 localhost 上測試和除錯他們的機器人。
 
@@ -61,4 +48,17 @@ az account show
 - [Bot Framework 文件](https://docs.botframework.com)
 - [Databricks Genie API 文件](https://docs.databricks.com/en/genie/index.html)
 - [Azure Bot Service 簡介](https://docs.microsoft.com/azure/bot-service/bot-service-overview-introduction?view=azure-bot-service-4.0)
+
+# Azure 驗證
+* 如果需要在 ai foundry 建立、刪除 agent，使用 [Azure CLI](https://learn.microsoft.com/zh-tw/cli/azure/install-azure-cli?view=azure-cli-latest) 在本機登入 Azure
+
+* 登入 Azure
+```bash
+az login --use-device-code
+```
+
+* 檢查目前登入狀態
+```bash
+az account show
+```
 
