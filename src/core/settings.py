@@ -68,9 +68,8 @@ class Settings:
             "project_endpoint": os.getenv("AZURE_FOUNDRY_PROJECT_ENDPOINT"),
             "agent_id": os.getenv("AZURE_AI_AGENT_ID"),
             "connection_names": [
-                os.getenv(
-                    "FOUNDRY_DATABRICKS_CONNECTION_NAME", "Active_dataset_Rag_bst"
-                ),
+                "Active_dataset_Rag_bst",
+                "Finance_dataset_Rag_bst",
             ],
         }
 

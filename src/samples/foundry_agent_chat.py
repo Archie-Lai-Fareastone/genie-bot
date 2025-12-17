@@ -2,19 +2,6 @@
 DESCRIPTION:
     This sample demonstrates how to interact with an existing
     Azure AI Foundry agent by sending user questions and receiving responses.
-
-USAGE:
-    python sample_agent_chat.py
-
-    Before running the sample:
-
-    pip install azure-ai-projects azure-ai-agents azure-identity databricks-ai-bridge databricks-sdk
-
-    Set these environment variables with your own values:
-    1) AZURE_FOUNDRY_PROJECT_ENDPOINT - The endpoint of your Azure AI Foundry project.
-    2) AZURE_AI_AGENT_ID - The ID of the existing agent.
-    3) FOUNDRY_DATABRICKS_CONNECTION_NAME - The name of the Databricks connection.
-    4) DATABRICKS_ENTRA_ID_AUDIENCE_SCOPE - The Entra ID audience scope for Databricks.
 """
 
 import json
