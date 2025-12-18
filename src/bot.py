@@ -11,6 +11,7 @@ from fastapi import FastAPI
 
 from src.core.logger_config import get_logger
 from src.core.settings import get_settings
+from src.utils.generate_chart_base64 import chart_to_base64
 
 # 取得 logger 實例
 logger = get_logger(__name__)
@@ -111,7 +112,7 @@ class MyBot(ActivityHandler):
     def _setup_toolset(self):
         """設定 AI Agent 工具集"""
         toolset = ToolSet()
-        toolset.add(FunctionTool(functions={self.ask_genie}))
+        toolset.add(FunctionTool(functions={self.ask_genie, chart_to_base64}))
         self.project_client.agents.enable_auto_function_calls(toolset)
         logger.info(f"工具集設定完成,可用的 Genie 連線: {list(self.genies.keys())}")
 

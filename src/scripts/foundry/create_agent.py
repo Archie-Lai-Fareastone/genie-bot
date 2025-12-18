@@ -25,14 +25,10 @@ FOUNDRY_PROJECT_ENDPOINT = os.getenv("AZURE_FOUNDRY_PROJECT_ENDPOINT")
 
 def ask_genie(connection_name: str, question: str) -> str:
     """
-    向指定的 Genie 提問（此函式僅用於工具定義，實際執行在 bot.py）
-
-    Args:
-        connection_name: Genie 連線名稱
-        question: 要詢問的問題
-
-    Returns:
-        JSON 格式的回應，包含 query, result, description
+    Function to ask Genie a question and get the response. Only the schema is defined here; actual execution is handled in bot definition.
+    :param questions: List of questions to ask Genie.
+    :param connection_name: The name of the Databricks connection.
+    :return: Response from Genie.
     """
     # 這個函式只是用來定義工具的 schema
     # 實際執行時會在 bot.py 中的 MyBot.ask_genie 方法中處理
