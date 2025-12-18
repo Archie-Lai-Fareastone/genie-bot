@@ -29,7 +29,7 @@ def ask_genie(connection_name: str, question: str) -> str:
     Only the schema is defined here; actual execution is handled in bot definition.
 
     :param question: Question to ask Genie.
-    :param connection_name: The name of the Databricks connection.
+    :param connection_name: The name of the Databricks connection. 可用選項: Active_dataset_Rag_bst (active dataset), Finance_dataset_Rag_bst (finance dataset)
     :return: Response from Genie.
     """
     # 這個函式只是用來定義工具的 schema
@@ -60,7 +60,13 @@ if __name__ == "__main__":
         agent = project_client.agents.create_agent(
             model="gpt-4o-mini",
             name="Archie_agent-2",
-            instructions="You're a helpful assistant. Use the ask_genie tool to answer questions by querying Databricks Genie. Always specify the correct connection_name based on the user's question.",
+            instructions="""
+                **IMPORTANT: Always use adaptive_card tool and return only the json content without any additional explanation.  The correct syntax should start with {
+                "type": "AdaptiveCard",
+                "version": "1.5",
+                "body": [...**
+                For data querying tasks, Use the ask_genie tool to get answers by querying Databricks Genie and then present the results using adaptive_card. When using ask_genie, always specify the correct connection_name based on the user's question. 
+            """,
             toolset=toolset,
         )
 

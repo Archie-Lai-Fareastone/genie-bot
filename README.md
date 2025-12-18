@@ -14,7 +14,6 @@
 專案根目錄
 ├── README.md
 ├── requirements.txt
-├── docs/
 ├── logs/       # bot 日誌
 ├── mlruns/     # 呼叫 genie 紀錄
 ├── src/

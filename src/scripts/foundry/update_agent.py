@@ -16,7 +16,7 @@ from typing import Any, Callable, Set
 import os
 from dotenv import load_dotenv
 
-from utils.chart_tools import chart_to_base64
+from src.utils.adaptive_card import adaptive_card
 
 load_dotenv()
 
@@ -33,7 +33,7 @@ def ask_genie(connection_name: str, question: str) -> str:
     Only the schema is defined here; actual execution is handled in bot definition.
 
     :param question: Question to ask Genie.
-    :param connection_name: The name of the Databricks connection.
+    :param connection_name: The name of the Databricks connection. 可用選項: Active_dataset_Rag_bst (active dataset), Finance_dataset_Rag_bst (finance dataset)
     :return: Response from Genie.
     """
     pass
@@ -57,7 +57,10 @@ if __name__ == "__main__":
 
     # 設定工具集
     toolset = ToolSet()
-    user_functions: Set[Callable[..., Any]] = {ask_genie, chart_to_base64}
+    user_functions: Set[Callable[..., Any]] = {
+        ask_genie,
+        adaptive_card,
+    }
     functions = FunctionTool(functions=user_functions)
     toolset.add(functions)
 
@@ -68,13 +71,13 @@ if __name__ == "__main__":
         # 更新 agent
         agent = project_client.agents.update_agent(
             agent_id=AGENT_ID,
-            instructions=(
-                "You're a helpful assistant. "
-                "Use the ask_genie tool to answer questions by querying Databricks Genie. "
-                "Always specify the correct connection_name based on the user's question. "
-                "When you receive data that would benefit from visualization, use the chart_to_base64 tool "
-                "to generate charts. Choose the appropriate chart_type based on the data structure."
-            ),
+            instructions="""
+                **IMPORTANT: Always use adaptive_card tool and return only the json content without any additional explanation.  The correct syntax should start with {
+                "type": "AdaptiveCard",
+                "version": "1.5",
+                "body": [...**
+                For data querying tasks, Use the ask_genie tool to get answers by querying Databricks Genie and then present the results using adaptive_card. When using ask_genie, always specify the correct connection_name based on the user's question. 
+            """,
             toolset=toolset,
         )
 
@@ -82,5 +85,3 @@ if __name__ == "__main__":
         print(f"  Model: {agent.model}")
         print(f"  Agent ID: {agent.id}")
         print(f"  Tools: {len(user_functions)} functions registered")
-        print(f"    - ask_genie")
-        print(f"    - chart_to_base64")

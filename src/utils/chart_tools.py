@@ -1,12 +1,13 @@
-from typing import Iterable, Literal
+from typing import Literal
 import io
 import base64
-
 import matplotlib
+from src.core.logger_config import get_logger
 
 matplotlib.use("Agg")  # Use Agg backend for headless environments
 import matplotlib.pyplot as plt
 
+logger = get_logger(__name__)
 
 ChartType = Literal["pie", "donut", "horizontal_bar", "vertical_bar", "line"]
 
@@ -27,7 +28,7 @@ def _truncate_label(label: str, max_length: int = 15) -> str:
 
 
 def chart_to_base64(
-    values: Iterable[float] | str, labels: Iterable[str] | str, chart_type: ChartType
+    values: list[float], labels: list[str], chart_type: ChartType
 ) -> str:
     """
     Render a chart from values and labels and return a PNG base64 data URI.
@@ -39,21 +40,25 @@ def chart_to_base64(
     :return: A data URI string (data:image/png;base64,...) containing the PNG image.
     """
 
+    logger.info(
+        f"Generating {chart_type} chart with labels: {labels} and values: {values}"
+    )
+
     # 處理 labels
     try:
-        labs = [
-            label.strip()
-            for label in (labels.split(",") if isinstance(labels, str) else labels)
-        ]
+        if isinstance(labels, str):
+            labs = [label.strip() for label in labels.split(",")]
+        else:
+            labs = [str(label).strip() for label in labels]
     except Exception as e:
         raise ValueError(f"無法處理 labels 參數: {e}")
 
     # 處理 values
     try:
-        vals = [
-            float(val.strip())
-            for val in (values.split(",") if isinstance(values, str) else values)
-        ]
+        if isinstance(values, str):
+            vals = [float(val.strip()) for val in values.split(",")]
+        else:
+            vals = [float(val) for val in values]
     except (ValueError, TypeError) as e:
         raise ValueError(f"無法將數值轉換為浮點數: {e}")
 

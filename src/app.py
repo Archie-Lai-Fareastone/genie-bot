@@ -1,4 +1,3 @@
-import sys
 from datetime import datetime, timezone
 import uvicorn
 from fastapi import FastAPI, Request, HTTPException

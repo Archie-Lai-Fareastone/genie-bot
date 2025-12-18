@@ -1,6 +1,6 @@
 from typing import Dict, List
-from botbuilder.core import ActivityHandler, TurnContext
-from botbuilder.schema import ChannelAccount
+from botbuilder.core import ActivityHandler, TurnContext, MessageFactory
+from botbuilder.schema import ChannelAccount, Attachment
 from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
 from azure.ai.agents.models import FunctionTool, ToolSet
@@ -8,8 +8,9 @@ from fastapi import FastAPI
 
 from src.core.logger_config import get_logger
 from src.core.settings import get_settings
-from utils.chart_tools import chart_to_base64
 from src.utils.genie_tools import genie_manager
+from src.utils.adaptive_card import adaptive_card
+import json
 
 # 取得 logger 實例
 logger = get_logger(__name__)
@@ -52,7 +53,7 @@ class MyBot(ActivityHandler):
         )
 
         toolset = ToolSet()
-        toolset.add(FunctionTool(functions={genie_manager.ask_genie, chart_to_base64}))
+        toolset.add(FunctionTool(functions={genie_manager.ask_genie, adaptive_card}))
         self.project_client.agents.enable_auto_function_calls(toolset)
         logger.info(f"工具集設定完成,可用的 Genie 連線: {list(genies.keys())}")
 
@@ -117,7 +118,21 @@ class MyBot(ActivityHandler):
 
                         if content_text:
                             logger.info(f"助理回應: {content_text}")
-                            await turn_context.send_activity(content_text)
+                            try:
+                                content_dict = json.loads(content_text)
+                                attachment = Attachment(
+                                    content_type="application/vnd.microsoft.card.adaptive",
+                                    content=content_dict,
+                                )
+                                message = MessageFactory.attachment(attachment)
+                            except json.JSONDecodeError as e:
+                                logger.error(f"內容解析失敗: {e}")
+                                await turn_context.send_activity(
+                                    "回應內容格式錯誤，無法解析。"
+                                )
+                                return
+
+                            await turn_context.send_activity(message)
                             return
 
             await turn_context.send_activity("抱歉,我無法取得回應。")
@@ -132,4 +147,4 @@ class MyBot(ActivityHandler):
         """處理成員加入事件"""
         for member in members_added:
             if member.id != turn_context.activity.recipient.id:
-                await turn_context.send_activity("歡迎使用 Databricks Genie Bot！")
+                await turn_context.send_activity("歡迎使用 Databricks Genie Agent！")
