@@ -15,8 +15,6 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-os.environ["DATABRICKS_SDK_UPSTREAM"] = "AzureAIFoundry"
-os.environ["DATABRICKS_SDK_UPSTREAM_VERSION"] = "1.0.0"
 
 DATABRICKS_ENTRA_ID_AUDIENCE_SCOPE = os.getenv("DATABRICKS_ENTRA_ID_AUDIENCE_SCOPE")
 FOUNDRY_PROJECT_ENDPOINT = os.getenv("AZURE_FOUNDRY_PROJECT_ENDPOINT")

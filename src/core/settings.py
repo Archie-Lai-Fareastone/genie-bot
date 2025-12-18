@@ -42,7 +42,8 @@ class Settings:
         if self.app_env == "development":
             self._load_from_env()
         elif self.app_env == "production":
-            self._load_from_cloud_secrets()
+            # TODO: 從雲端 Secrets 管理服務載入配置
+            self._load_from_env()
         else:
             raise ValueError(f"未知的環境: {self.app_env}")
 
@@ -75,18 +76,8 @@ class Settings:
 
         # Databricks 配置
         self.databricks = {
-            "sdk_upstream": os.getenv("DATABRICKS_SDK_UPSTREAM", "AzureAIFoundry"),
-            "sdk_upstream_version": os.getenv(
-                "DATABRICKS_SDK_UPSTREAM_VERSION", "1.0.0"
-            ),
             "entra_id_audience_scope": os.getenv("DATABRICKS_ENTRA_ID_AUDIENCE_SCOPE"),
         }
-
-    def _load_from_cloud_secrets(self):
-        """從雲端 Secrets 管理服務載入配置(生產環境)"""
-        # TODO: 實作從雲端 Secrets 載入配置
-        # 例如: Azure Key Vault, AWS Secrets Manager, GCP Secret Manager
-        pass
 
     def set_config(self, category: str, key: str, value: Any) -> None:
         """

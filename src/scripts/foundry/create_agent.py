@@ -25,8 +25,10 @@ FOUNDRY_PROJECT_ENDPOINT = os.getenv("AZURE_FOUNDRY_PROJECT_ENDPOINT")
 
 def ask_genie(connection_name: str, question: str) -> str:
     """
-    Function to ask Genie a question and get the response. Only the schema is defined here; actual execution is handled in bot definition.
-    :param questions: List of questions to ask Genie.
+    Function to ask Genie a question and get the response.
+    Only the schema is defined here; actual execution is handled in bot definition.
+
+    :param question: Question to ask Genie.
     :param connection_name: The name of the Databricks connection.
     :return: Response from Genie.
     """

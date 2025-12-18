@@ -16,7 +16,7 @@ from typing import Any, Callable, Set
 import os
 from dotenv import load_dotenv
 
-from src.utils.generate_chart_base64 import chart_to_base64
+from utils.chart_tools import chart_to_base64
 
 load_dotenv()
 
