@@ -27,35 +27,62 @@ class MyBot(ActivityHandler):
         self.settings = get_settings(app)
 
         # 初始化 Azure 認證
+        logger.info("正在初始化 Azure 認證...")
         self.credential = DefaultAzureCredential(
-            exclude_interactive_browser_credential=False
+            exclude_interactive_browser_credential=False,
         )
+        logger.info("Azure 認證已初始化")
 
         # 初始化 AI Project Client
         self.project_client = AIProjectClient(
             self.settings.azure_foundry["project_endpoint"], self.credential
         )
+        logger.info("AI Project Client 已初始化")
 
         self.agent_id = self.settings.azure_foundry["agent_id"]
 
         # 設定工具集
-        self._setup_toolset()
+        try:
+            self._setup_toolset()
+        except Exception as e:
+            logger.error(f"工具集設定失敗: {e}", exc_info=True)
+            # 不要讓整個 Bot 初始化失敗，但要記錄錯誤
 
     def _setup_toolset(self):
         """設定 AI Agent 工具集"""
+        logger.info("開始設定工具集...")
 
-        # 初始化 Genie
-        genies = genie_manager.initialize(
-            self.project_client,
-            self.credential,
-            self.settings.azure_foundry["connection_names"],
-            self.settings.databricks["entra_id_audience_scope"],
-        )
+        try:
+            # 記錄配置資訊（不含敏感資料）
+            logger.info(
+                f"Connection names: {self.settings.azure_foundry['connection_names']}"
+            )
+            logger.info(f"Agent ID: {self.agent_id}")
 
-        toolset = ToolSet()
-        toolset.add(FunctionTool(functions={genie_manager.ask_genie, adaptive_card}))
-        self.project_client.agents.enable_auto_function_calls(toolset)
-        logger.info(f"工具集設定完成,可用的 Genie 連線: {list(genies.keys())}")
+            # 初始化 Genie
+            logger.info("開始初始化 Genie...")
+            genies = genie_manager.initialize(
+                self.project_client,
+                self.credential,
+                self.settings.azure_foundry["connection_names"],
+                self.settings.databricks["entra_id_audience_scope"],
+            )
+            logger.info(f"Genie 初始化成功，連線數量: {len(genies)}")
+
+            # 設定工具集
+            logger.info("開始設定 ToolSet...")
+            toolset = ToolSet()
+            toolset.add(
+                FunctionTool(functions={genie_manager.ask_genie, adaptive_card})
+            )
+            logger.info("ToolSet 建立完成，開始啟用自動函式呼叫...")
+
+            self.project_client.agents.enable_auto_function_calls(toolset)
+            logger.info(f"工具集設定完成,可用的 Genie 連線: {list(genies.keys())}")
+
+        except Exception as e:
+            logger.error(f"工具集設定過程中發生錯誤: {e}", exc_info=True)
+            raise
 
     async def on_message_activity(self, turn_context: TurnContext):
         """處理使用者訊息"""
@@ -148,3 +175,4 @@ class MyBot(ActivityHandler):
         for member in members_added:
             if member.id != turn_context.activity.recipient.id:
                 await turn_context.send_activity("歡迎使用 Databricks Genie Agent！")
+                logger.info(f"歡迎訊息已發送給使用者: {member.id}")

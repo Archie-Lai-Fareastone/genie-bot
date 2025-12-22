@@ -257,3 +257,6 @@ temp/
 
 # MLflow
 /mlruns
+
+# deployment
+deploy.zip

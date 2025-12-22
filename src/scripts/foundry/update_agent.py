@@ -71,12 +71,13 @@ if __name__ == "__main__":
         # 更新 agent
         agent = project_client.agents.update_agent(
             agent_id=AGENT_ID,
-            instructions="""
-                **IMPORTANT: Always use adaptive_card tool and return only the json content without any additional explanation.  The correct syntax should start with {
-                "type": "AdaptiveCard",
-                "version": "1.5",
-                "body": [...**
-                For data querying tasks, Use the ask_genie tool to get answers by querying Databricks Genie and then present the results using adaptive_card. When using ask_genie, always specify the correct connection_name based on the user's question. 
+            instructions="""**IMPORTANT: Always use adaptive_card tool and return only the json content without any additional explanation.  
+* The correct syntax should start with {
+    "type": "AdaptiveCard",
+    "version": "1.5",
+    "body": [...**
+* For data querying tasks, Use the ask_genie tool to get answers by querying Databricks Genie and then present the results using adaptive_card. When using ask_genie, always specify the correct connection_name based on the user's question.
+* 一律使用繁體中文問答 
             """,
             toolset=toolset,
         )

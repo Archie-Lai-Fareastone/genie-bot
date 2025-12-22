@@ -42,32 +42,50 @@ class Settings:
         if self.app_env == "development":
             self._load_from_env()
         elif self.app_env == "production":
-            # TODO: 從雲端 Secrets 管理服務載入配置
+            # 生產環境也從環境變數載入（Azure Web App 會將設定注入環境變數）
             self._load_from_env()
         else:
             raise ValueError(f"未知的環境: {self.app_env}")
 
     def _load_from_env(self):
-        """從 .env 檔案載入配置(開發環境)"""
-        load_dotenv()
+        """從 .env 檔案載入配置(開發環境)或環境變數(生產環境)"""
+        # 只在開發環境載入 .env 檔案
+        if self.app_env == "development":
+            load_dotenv()
 
         # 應用程式配置
         self.app = {
-            "port": int(os.getenv("PORT", "3978")),
-            "host": os.getenv("HOST", "localhost"),
+            "port": int(os.getenv("PORT", "8000")),
+            "host": os.getenv("HOST", "0.0.0.0"),
             "release_version": os.getenv("APP_RELEASE_VERSION", "1.0.0"),
         }
 
         # Microsoft Bot Framework 配置
-        self.bot = {
-            "app_id": os.getenv("MicrosoftAppId", ""),
-            "app_password": os.getenv("MicrosoftAppPassword", ""),
-        }
+        if self.app_env == "development":
+            # 本地開發：Bot Framework Emulator 會跳過認證檢查
+            self.bot = {
+                "app_id": "",
+                "app_password": "",
+            }
+        else:
+            # 生產環境：使用 Service Principal credentials
+            self.bot = {
+                "app_id": os.getenv("AZURE_CLIENT_ID", ""),
+                "app_password": os.getenv("AZURE_CLIENT_SECRET", ""),
+            }
 
         # Azure AI Foundry 配置
+        project_endpoint = os.getenv("AZURE_FOUNDRY_PROJECT_ENDPOINT")
+        agent_id = os.getenv("AZURE_AI_AGENT_ID")
+
+        if not project_endpoint:
+            raise ValueError("缺少必要的環境變數: AZURE_FOUNDRY_PROJECT_ENDPOINT")
+        if not agent_id:
+            raise ValueError("缺少必要的環境變數: AZURE_AI_AGENT_ID")
+
         self.azure_foundry = {
-            "project_endpoint": os.getenv("AZURE_FOUNDRY_PROJECT_ENDPOINT"),
-            "agent_id": os.getenv("AZURE_AI_AGENT_ID"),
+            "project_endpoint": project_endpoint,
+            "agent_id": agent_id,
             "connection_names": [
                 "Active_dataset_Rag_bst",
                 "Finance_dataset_Rag_bst",
@@ -75,8 +93,12 @@ class Settings:
         }
 
         # Databricks 配置
+        entra_id_scope = os.getenv("DATABRICKS_ENTRA_ID_AUDIENCE_SCOPE")
+        if not entra_id_scope:
+            raise ValueError("缺少必要的環境變數: DATABRICKS_ENTRA_ID_AUDIENCE_SCOPE")
+
         self.databricks = {
-            "entra_id_audience_scope": os.getenv("DATABRICKS_ENTRA_ID_AUDIENCE_SCOPE"),
+            "entra_id_audience_scope": entra_id_scope,
         }
 
     def set_config(self, category: str, key: str, value: Any) -> None:

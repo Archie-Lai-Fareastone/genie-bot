@@ -29,6 +29,7 @@ bot_settings = BotFrameworkAdapterSettings(
     settings.bot["app_id"], settings.bot["app_password"]
 )
 ADAPTER = BotFrameworkAdapter(bot_settings)
+logger.info("Bot Framework Adapter 已建立")
 
 
 # 錯誤處理函式
@@ -54,6 +55,7 @@ ADAPTER.on_turn_error = on_error
 
 # 建立機器人
 BOT = MyBot(app)
+logger.info("Bot 實例已建立")
 
 
 # 主要訊息處理端點

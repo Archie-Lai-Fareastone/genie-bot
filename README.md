@@ -72,6 +72,12 @@ pip freeze > requirements.txt
 - 建立 .env 檔案，確保 .env 檔案在 .gitignore 內
 - 不要讓 github copilot 讀取到，只能讀取 .env.example 範例檔案
 
+### 啟動 app
+
+```bash
+python -m uvicorn src.app:app --host 0.0.0.0 --port 8000
+```
+
 ## Bot Framework Emulator
 
 [Bot Framework Emulator](https://github.com/microsoft/botframework-emulator) 是一個桌面應用程式，允許機器人開發者在 localhost 上測試和除錯他們的機器人。
@@ -91,7 +97,7 @@ pip freeze > requirements.txt
 
 ## AzureCLI 驗證
 
-- 如果需要在 ai foundry 建立、刪除 agent，使用 [Azure CLI](https://learn.microsoft.com/zh-tw/cli/azure/install-azure-cli?view=azure-cli-latest) 在本機登入 Azure
+- 如果需要在 ai foundry 建立、更新、刪除 agent，使用 [Azure CLI](https://learn.microsoft.com/zh-tw/cli/azure/install-azure-cli?view=azure-cli-latest) 在本機登入 Azure
 
 - 登入 Azure
 
