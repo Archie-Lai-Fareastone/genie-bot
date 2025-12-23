@@ -9,7 +9,8 @@ from fastapi import FastAPI
 from src.core.logger_config import get_logger
 from src.core.settings import get_settings
 from src.utils.genie_tools import genie_manager
-from src.utils.adaptive_card import adaptive_card
+from src.utils.response_format import get_genie_response_format
+from src.utils.card_builder import convert_to_adaptive_card
 import json
 
 # 取得 logger 實例
@@ -66,9 +67,7 @@ class MyBot(ActivityHandler):
             # 設定工具集
             logger.info("開始設定 ToolSet...")
             toolset = ToolSet()
-            toolset.add(
-                FunctionTool(functions={genie_manager.ask_genie, adaptive_card})
-            )
+            toolset.add(FunctionTool(functions={genie_manager.ask_genie}))
             self.project_client.agents.enable_auto_function_calls(toolset)
             logger.info(f"工具集設定完成,可用的 Genie 連線: {list(genies.keys())}")
 
@@ -112,9 +111,14 @@ class MyBot(ActivityHandler):
                 thread_id=thread_id, role="user", content=question
             )
 
+            # 取得回應格式定義
+            response_format = get_genie_response_format()
+
             # 執行代理程式
             run = self.project_client.agents.runs.create_and_process(
-                thread_id=thread_id, agent_id=self.agent_id
+                thread_id=thread_id,
+                agent_id=self.agent_id,
+                response_format=response_format,
             )
             logger.info(f"執行完成,狀態: {run.status}")
 
@@ -138,21 +142,21 @@ class MyBot(ActivityHandler):
                         if content_text:
                             logger.info(f"助理回應: {content_text}")
                             try:
-                                content_dict = json.loads(content_text)
-                                attachment = Attachment(
-                                    content_type="application/vnd.microsoft.card.adaptive",
-                                    content=content_dict,
-                                )
+                                response_data = json.loads(content_text)
+                                attachment = convert_to_adaptive_card(response_data)
                                 message = MessageFactory.attachment(attachment)
+                                await turn_context.send_activity(message)
+                                return
                             except json.JSONDecodeError as e:
-                                logger.error(f"內容解析失敗: {e}")
+                                logger.error(f"回應解析失敗: {e}")
                                 await turn_context.send_activity(
                                     "回應內容格式錯誤，無法解析。"
                                 )
                                 return
-
-                            await turn_context.send_activity(message)
-                            return
+                            except ValueError as e:
+                                logger.error(f"卡片建立失敗: {e}")
+                                await turn_context.send_activity(f"卡片建立錯誤: {e}")
+                                return
 
             await turn_context.send_activity("抱歉,我無法取得回應。")
 
