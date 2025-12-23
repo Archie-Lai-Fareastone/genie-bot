@@ -27,13 +27,14 @@ class MyBot(ActivityHandler):
         self.settings = get_settings(app)
 
         # 初始化 Azure 認證
-        logger.info("正在初始化 Azure 認證...")
+        logger.info("======STEP 1: 正在初始化 Azure 認證======")
         self.credential = DefaultAzureCredential(
             exclude_interactive_browser_credential=False,
         )
         logger.info("Azure 認證已初始化")
 
         # 初始化 AI Project Client
+        logger.info("======STEP 2: 正在初始化 AI Project Client======")
         self.project_client = AIProjectClient(
             self.settings.azure_foundry["project_endpoint"], self.credential
         )
@@ -42,6 +43,7 @@ class MyBot(ActivityHandler):
         self.agent_id = self.settings.azure_foundry["agent_id"]
 
         # 設定工具集
+        logger.info("======STEP 3: 正在初始化 AI Agent 工具集======")
         try:
             self._setup_toolset()
         except Exception as e:
@@ -50,15 +52,7 @@ class MyBot(ActivityHandler):
 
     def _setup_toolset(self):
         """設定 AI Agent 工具集"""
-        logger.info("開始設定工具集...")
-
         try:
-            # 記錄配置資訊（不含敏感資料）
-            logger.info(
-                f"Connection names: {self.settings.azure_foundry['connection_names']}"
-            )
-            logger.info(f"Agent ID: {self.agent_id}")
-
             # 初始化 Genie
             logger.info("開始初始化 Genie...")
             genies = genie_manager.initialize(
@@ -75,8 +69,6 @@ class MyBot(ActivityHandler):
             toolset.add(
                 FunctionTool(functions={genie_manager.ask_genie, adaptive_card})
             )
-            logger.info("ToolSet 建立完成，開始啟用自動函式呼叫...")
-
             self.project_client.agents.enable_auto_function_calls(toolset)
             logger.info(f"工具集設定完成,可用的 Genie 連線: {list(genies.keys())}")
 

@@ -15,6 +15,7 @@
 ├── README.md
 ├── requirements.txt
 ├── logs/       # bot 日誌
+├── docs/       # 專案文件
 ├── mlruns/     # 呼叫 genie 紀錄
 ├── src/
 │   ├── app.py
@@ -34,6 +35,8 @@
 - 開發使用 Python 版本: 3.12
 
 ### 開發使用 venv 虛擬環境 (可選擇)
+
+> 若不使用 venv 可直接安裝套件到全域環境
 
 - 建立虛擬環境
 
@@ -75,10 +78,14 @@ pip freeze > requirements.txt
 ### 啟動 app
 
 ```bash
+# 本地端 (localhost:3978)
+python -m src.app
+
+# Azure Web App
 python -m uvicorn src.app:app --host 0.0.0.0 --port 8000
 ```
 
-## Bot Framework Emulator
+## 選項一：Bot Framework Emulator
 
 [Bot Framework Emulator](https://github.com/microsoft/botframework-emulator) 是一個桌面應用程式，允許機器人開發者在 localhost 上測試和除錯他們的機器人。
 
@@ -89,13 +96,42 @@ python -m uvicorn src.app:app --host 0.0.0.0 --port 8000
 - 啟動 Bot Framework Emulator
 - 輸入機器人 URL：`http://localhost:3978/api/messages`
 
+### Bot Framework Adapter 設定範例
+
+- **本地測試請傳入空字串跳過認證**，Bot Framework Emulator 不會處理認證
+
+```python
+bot_settings = BotFrameworkAdapterSettings(
+    settings.bot.get("app_id", ""), settings.bot.get("app_password", "")
+)
+```
+
 ### 參考資料
 
 - [Bot Framework 文件](https://docs.botframework.com)
 - [Databricks Genie API 文件](https://docs.databricks.com/en/genie/index.html)
 - [Azure Bot Service 簡介](https://docs.microsoft.com/azure/bot-service/bot-service-overview-introduction?view=azure-bot-service-4.0)
 
-## AzureCLI 驗證
+## 選項二：Agents Playground
+
+- 代替 Bot Framework Emulator，使用 [Agents Playground](https://learn.microsoft.com/zh-tw/microsoft-365/agents-sdk/test-with-toolkit-project?tabs=windows)
+- 程式設定同 Bot Framework Emulator
+
+### 安裝 agentsplayground
+
+```sh
+npm install -g @microsoft/m365agentsplayground
+```
+
+### 執行 agentsplayground
+
+```sh
+agentsplayground -e "http://localhost:3978/api/messages"
+```
+
+## 身分驗證
+
+### 本地開發使用 Azure CLI 驗證
 
 - 如果需要在 ai foundry 建立、更新、刪除 agent，使用 [Azure CLI](https://learn.microsoft.com/zh-tw/cli/azure/install-azure-cli?view=azure-cli-latest) 在本機登入 Azure
 
@@ -110,3 +146,32 @@ az login --tenant <tenant_id> --use-device-code
 ```bash
 az account show
 ```
+
+#### DefaultAzureCredential 使用範例
+
+- az login 後，自動取得使用者身分登入
+
+```python
+from azure.identity import DefaultAzureCredential
+
+# 初始化 Azure 認證
+credential = DefaultAzureCredential(
+    exclude_interactive_browser_credential=False,
+)
+# 初始化 AI Project Client
+project_client = AIProjectClient(
+    settings.azure_foundry["project_endpoint"], credential
+)
+```
+
+### Service Principal 驗證 (部署到 Azure Web App 使用)
+
+- 必須設定以下三個環境變數
+
+```
+AZURE_TENANT_ID=
+AZURE_CLIENT_ID=
+AZURE_CLIENT_SECRET=
+```
+
+- 程式碼同上，只是 DefaultAzureCredential 會自動使用 Service Principal 驗證
