@@ -8,6 +8,10 @@ from botbuilder.core import (
     BotFrameworkAdapterSettings,
 )
 from botbuilder.schema import Activity, ActivityTypes
+from botbuilder.integration.aiohttp import (
+    CloudAdapter,
+    ConfigurationBotFrameworkAuthentication,
+)
 
 from src.bot import MyBot
 from src.core.logger_config import setup_logging, get_logger
@@ -25,11 +29,21 @@ init_settings(app)
 settings = get_settings(app)
 
 # 建立適配器
-bot_settings = BotFrameworkAdapterSettings(
-    settings.bot["app_id"], settings.bot["app_password"]
-)
-ADAPTER = BotFrameworkAdapter(bot_settings)
-logger.info("Bot Framework Adapter 已建立")
+if settings.bot["app_id"] != "" and settings.bot["app_password"] != "":
+    # Production: Use CloudAdapter
+    class BotConfig:
+        APP_ID = settings.bot["app_id"]
+        APP_PASSWORD = settings.bot["app_password"]
+        APP_TYPE = settings.bot["app_type"]
+        APP_TENANTID = settings.bot["app_tenantid"]
+
+    ADAPTER = CloudAdapter(ConfigurationBotFrameworkAuthentication(BotConfig()))
+    logger.info("CloudAdapter 已建立 (生產環境)")
+else:
+    # Local testing: Use BotFrameworkAdapter with empty credentials
+    SETTINGS = BotFrameworkAdapterSettings("", "")
+    ADAPTER = BotFrameworkAdapter(SETTINGS)
+    logger.info("BotFrameworkAdapter 已建立 (本地開發)")
 
 
 # 錯誤處理函式
@@ -71,12 +85,21 @@ async def messages(request: Request):
 
         activity = Activity().deserialize(body)
 
-        async def bot_logic(turn_context: TurnContext):
-            await BOT.on_turn(turn_context)
-
-        await ADAPTER.process_activity(activity, auth_header, bot_logic)
-
-        return JSONResponse(content={}, status_code=200)
+        # 根據適配器類型使用不同的處理方式
+        if hasattr(ADAPTER, "process"):
+            # CloudAdapter - 直接使用 process 方法
+            response = await ADAPTER.process(request, BOT)
+            if response:
+                return JSONResponse(content=response.body, status_code=response.status)
+            return JSONResponse(content={}, status_code=201)
+        else:
+            # BotFrameworkAdapter - 使用 process_activity
+            response = await ADAPTER.process_activity(
+                activity, auth_header, BOT.on_turn
+            )
+            if response:
+                return JSONResponse(content=response.body, status_code=response.status)
+            return JSONResponse(content={}, status_code=201)
 
     except Exception as e:
         logger.error(f"處理請求時發生錯誤: {str(e)}", exc_info=True)

@@ -70,7 +70,7 @@ def setup_logging(level: int = logging.INFO, log_file: Optional[str] = None) -> 
     logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(
         logging.WARNING
     )
-    logging.getLogger("azure.identity").setLevel(logging.DEBUG)
+    logging.getLogger("azure.identity").setLevel(logging.WARNING)
 
     # 記錄日誌系統已初始化
     root_logger = logging.getLogger()

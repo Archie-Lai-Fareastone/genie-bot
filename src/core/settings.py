@@ -72,6 +72,8 @@ class Settings:
             self.bot = {
                 "app_id": os.getenv("AZURE_CLIENT_ID", ""),
                 "app_password": os.getenv("AZURE_CLIENT_SECRET", ""),
+                "app_type": os.getenv("APP_TYPE", "SingleTenant"),
+                "app_tenantid": os.getenv("AZURE_TENANT_ID", ""),
             }
 
         # Azure AI Foundry 配置
