@@ -1,12 +1,8 @@
 # 專案說明
 
-- 本專案是一個基於 Python 的 Teams 聊天機器人，整合 Microsoft Foundry Agent Service 進行對話，並透過 agent 串接 Databricks Genie，能夠協助使用者進行資料分析。
+- 本專案是一個基於 Python FastAPI 的 Teams 聊天機器人，整合 Microsoft Foundry Agent Service 進行對話，並透過 agent 串接 Databricks Genie，能夠協助使用者進行資料分析。
 
-[1. 套件管理](#套件管理)
-[2. Bot Framework Emulator](#bot-framework-emulator)
-[3. AzureCLI 驗證](#azurecli-驗證)
-
-## 專案架構
+## 1. 專案架構
 
 - 專案架構圖
 
@@ -22,17 +18,24 @@
 │   ├── bot.py
 │   ├── core/
 │   │   ├── logger_config.py    # 日誌設定
-│   │   └── settings.py         # 環境變數設定
+│   │   └── settings.py         # 集中管理環境變數設定
 │   ├── scripts/
-│   │   └── foundry/            # foundry agent 操作
+│   │   └── foundry/            # foundry project 一次性操作
 │   └── utils/
 ├── .env                        # 環境變數檔案
 ├── .env.example                # 環境變數範例檔案
 ```
 
-## 套件管理
+### 參考專案
 
-- 開發使用 Python 版本: 3.12
+- [DatabricksGenieBOT](https://github.com/carrossoni/DatabricksGenieBOT/tree/main)
+- 注意事項：
+  1. 參考專案使用 `aiohttp`，本專案改用 `FastAPI` 框架
+  2. 參考專案架構為 webapp <--> databricks genie，本專案架構為 teams bot <--> foundry agent <--> databicks genie，呼叫對象為 Microsoft Foundry Agent Service，因此不須設定 databricks host, genie space id 等資訊。
+
+## 2. 開發環境
+
+- 開發使用 Python 版本: 3.12 以上
 
 ### 開發使用 venv 虛擬環境 (可選擇)
 
@@ -85,51 +88,54 @@ python -m src.app
 python -m uvicorn src.app:app --host 0.0.0.0 --port 8000
 ```
 
-## 選項一：Bot Framework Emulator
+## 3. 本地測試機器人
+
+### 選項一：Bot Framework Emulator
 
 [Bot Framework Emulator](https://github.com/microsoft/botframework-emulator) 是一個桌面應用程式，允許機器人開發者在 localhost 上測試和除錯他們的機器人。
 
 - 從[這裡](https://github.com/Microsoft/BotFramework-Emulator/releases)安裝 Bot Framework Emulator 版本 4.3.0 或更高版本
 
-### 使用 Bot Framework Emulator 連接到機器人
+#### 使用 Bot Framework Emulator 連接到機器人
 
 - 啟動 Bot Framework Emulator
 - 輸入機器人 URL：`http://localhost:3978/api/messages`
 
-### Bot Framework Adapter 設定範例
+#### Bot Framework Adapter 設定範例
 
 - **本地測試請傳入空字串跳過認證**，Bot Framework Emulator 不會處理認證
 
 ```python
-bot_settings = BotFrameworkAdapterSettings(
-    settings.bot.get("app_id", ""), settings.bot.get("app_password", "")
-)
+bot_settings = BotFrameworkAdapterSettings("", "")
 ```
 
-### 參考資料
+#### 參考資料
 
 - [Bot Framework 文件](https://docs.botframework.com)
 - [Databricks Genie API 文件](https://docs.databricks.com/en/genie/index.html)
 - [Azure Bot Service 簡介](https://docs.microsoft.com/azure/bot-service/bot-service-overview-introduction?view=azure-bot-service-4.0)
 
-## 選項二：Agents Playground
+### 選項二：Agents Playground
 
 - 代替 Bot Framework Emulator，使用 [Agents Playground](https://learn.microsoft.com/zh-tw/microsoft-365/agents-sdk/test-with-toolkit-project?tabs=windows)
 - 程式設定同 Bot Framework Emulator
 
-### 安裝 agentsplayground
+#### 安裝 agentsplayground
 
 ```sh
 npm install -g @microsoft/m365agentsplayground
 ```
 
-### 執行 agentsplayground
+#### 執行 agentsplayground
 
 ```sh
 agentsplayground -e "http://localhost:3978/api/messages"
+
+# 或直接執行
+agentsplayground
 ```
 
-## 身分驗證
+## 4. 身分驗證
 
 ### 本地開發使用 Azure CLI 驗證
 
@@ -175,3 +181,35 @@ AZURE_CLIENT_SECRET=
 ```
 
 - 程式碼同上，只是 DefaultAzureCredential 會自動使用 Service Principal 驗證
+
+## 5. 部署到 Azure Web App
+
+### 上版方法一：zip 檔案
+
+1. 打包成 `deploy.zip` 檔案
+
+- 只打包 src/ 目錄和 requirements.txt
+
+```cmd
+tar -a -c -f deploy.zip src requirements.txt
+```
+
+2. 使用 `az webapp deploy` 指令部署
+
+- 檢查 webapp 名稱、resource group 是否正確
+
+```cmd
+az webapp deploy ^
+    --name fet-mobilebot-webapp ^
+    --resource-group fet-rag-bst-rg ^
+    --src-path deploy.zip ^
+    --type zip
+```
+
+### 設定啟動命令
+
+- 寫在 web app portal 設定 -> 堆疊設定 -> 啟動命令
+
+```sh
+python3 -m uvicorn src.app:app --host 0.0.0.0 --port 8000 --workers 2 --log-level info
+```
