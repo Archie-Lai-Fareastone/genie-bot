@@ -13,7 +13,7 @@ from botbuilder.integration.aiohttp import (
     ConfigurationBotFrameworkAuthentication,
 )
 
-from src.bot import MyBot
+from bot.foundry_bot import FoundryBot
 from src.core.logger_config import setup_logging, get_logger
 from src.core.settings import init_settings, get_settings
 
@@ -68,7 +68,7 @@ async def on_error(context: TurnContext, error: Exception):
 ADAPTER.on_turn_error = on_error
 
 # 建立機器人
-BOT = MyBot(app)
+BOT = FoundryBot(app)
 logger.info("Bot 實例已建立")
 
 

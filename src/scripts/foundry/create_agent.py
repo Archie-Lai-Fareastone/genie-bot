@@ -33,7 +33,7 @@ def ask_genie(connection_name: str, question: str) -> str:
     :return: Response from Genie.
     """
     # 這個函式只是用來定義工具的 schema
-    # 實際執行時會在 bot.py 中的 MyBot.ask_genie 方法中處理
+    # 實際執行時會在 bot.py 中的 Bot.ask_genie 方法中處理
     pass
 
 
@@ -60,13 +60,11 @@ if __name__ == "__main__":
         agent = project_client.agents.create_agent(
             model="gpt-4o-mini",
             name="Archie_agent-2",
-            instructions="""**IMPORTANT: Always use adaptive_card tool and return only the json content without any additional explanation.  
-* The correct syntax should start with {
-    "type": "AdaptiveCard",
-    "version": "1.5",
-    "body": [...**
-* For data querying tasks, Use the ask_genie tool to get answers by querying Databricks Genie and then present the results using adaptive_card. When using ask_genie, always specify the correct connection_name based on the user's question.
-* 一律使用繁體中文問答 
+            instructions="""* 一律使用繁體中文問答
+* 回傳格式必須包含 card_type 以及其他對應欄位
+* 如果使用者問題和 "active" 或 "finance" 資料相關，使用 ask_genie 工具取得資料，取得結果後回傳給使用者
+* 使用 ask_genie 的時候要根據使用者問題傳遞 connection_name
+* 單一問題使用 ask_genie 次數不得超過 2 次
             """,
             toolset=toolset,
         )

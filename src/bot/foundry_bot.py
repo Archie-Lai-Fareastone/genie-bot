@@ -1,6 +1,6 @@
 from typing import Dict, List
 from botbuilder.core import ActivityHandler, TurnContext, MessageFactory
-from botbuilder.schema import ChannelAccount, Attachment
+from botbuilder.schema import ChannelAccount
 from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
 from azure.ai.agents.models import FunctionTool, ToolSet
@@ -10,14 +10,14 @@ from src.core.logger_config import get_logger
 from src.core.settings import get_settings
 from src.utils.genie_tools import genie_manager
 from src.utils.response_format import get_genie_response_format
-from src.utils.card_builder import convert_to_adaptive_card
+from src.utils.card_builder import convert_to_card
 import json
 
 # 取得 logger 實例
 logger = get_logger(__name__)
 
 
-class MyBot(ActivityHandler):
+class FoundryBot(ActivityHandler):
     def __init__(self, app: FastAPI):
         """初始化 Bot
 
@@ -143,7 +143,7 @@ class MyBot(ActivityHandler):
                             logger.info(f"助理回應: {content_text}")
                             try:
                                 response_data = json.loads(content_text)
-                                attachment = convert_to_adaptive_card(response_data)
+                                attachment = convert_to_card(response_data)
                                 message = MessageFactory.attachment(attachment)
                                 await turn_context.send_activity(message)
                                 return

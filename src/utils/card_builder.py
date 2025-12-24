@@ -131,7 +131,7 @@ def create_chart_card(labels: list[str], values: list[str]) -> dict:
     }
 
 
-def convert_to_adaptive_card(response_data: dict) -> Attachment:
+def convert_to_card(response_data: dict) -> Attachment:
     """將 Genie 回應轉換為 Adaptive Card
 
     Args:

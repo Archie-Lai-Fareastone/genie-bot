@@ -137,7 +137,7 @@ class GenieManager:
                     )
                     response = self._genies[connection_name].ask_question(question)
                 else:
-                    raise
+                    raise e
 
             result = {
                 "connection_name": connection_name,
