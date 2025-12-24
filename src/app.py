@@ -13,7 +13,7 @@ from botbuilder.integration.aiohttp import (
     ConfigurationBotFrameworkAuthentication,
 )
 
-from bot.foundry_bot import FoundryBot
+from src.bot.foundry_bot import FoundryBot
 from src.core.logger_config import setup_logging, get_logger
 from src.core.settings import init_settings, get_settings
 

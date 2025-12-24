@@ -1,3 +1,17 @@
+"""
+此模組提供用於生成各種類型圖表並將其轉換為 base64 編碼 PNG 圖片的實用函式。
+設計用於無頭環境，使用 Matplotlib 函式庫進行圖表渲染。
+
+函式:
+- _truncate_label: 將標籤字串截斷至指定的最大長度。
+- chart_to_base64: 根據輸入的數值與標籤生成圖表（圓餅圖、甜甜圈圖、水平長條圖、垂直長條圖或折線圖），
+    並以 base64 編碼的 PNG 圖片格式返回圖表。
+
+未來開發方向：
+- 支援更細緻化圖表控制，例如顏色、字體大小等參數，這些參數目前寫死，未來可由 agent 提供。
+- chart_to_base64 增加參數，須同步調整 card_builder.py 中 create_chart_card 的呼叫、response_format.py 中的 JSON schema 定義。
+"""
+
 from typing import Literal
 import io
 import base64
@@ -8,7 +22,6 @@ matplotlib.use("Agg")  # Use Agg backend for headless environments
 import matplotlib.pyplot as plt
 
 logger = get_logger(__name__)
-
 ChartType = Literal["pie", "donut", "horizontal_bar", "vertical_bar", "line"]
 
 
@@ -69,6 +82,7 @@ def chart_to_base64(
     colors = [cmap(i / max(1, n - 1)) for i in range(n)]
 
     buf = io.BytesIO()
+    fig = None
     try:
         if chart_type == "pie":
             fig = plt.figure(figsize=(6, 6))
@@ -120,7 +134,8 @@ def chart_to_base64(
         else:
             raise ValueError(f"Unsupported chart_type: {chart_type}")
     finally:
-        plt.close(fig)
+        if fig is not None:
+            plt.close(fig)
 
     buf.seek(0)
     encoded = base64.b64encode(buf.read()).decode("utf-8")

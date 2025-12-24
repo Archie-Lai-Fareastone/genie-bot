@@ -69,7 +69,7 @@ if __name__ == "__main__":
         agent = project_client.agents.update_agent(
             agent_id=AGENT_ID,
             instructions="""* 一律使用繁體中文問答
-* 回傳格式必須包含 card_type 以及其他對應欄位
+* 回傳格式必須包含一個或多個 card_type 以及其他對應欄位
 * 如果使用者問題和 "active" 或 "finance" 資料相關，使用 ask_genie 工具取得資料，取得結果後回傳給使用者
 * 使用 ask_genie 的時候要根據使用者問題傳遞 connection_name
 * 單一問題使用 ask_genie 次數不得超過 2 次

@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from src.core.logger_config import get_logger
 from src.core.settings import get_settings
 from src.utils.genie_tools import genie_manager
-from src.utils.response_format import get_genie_response_format
+from src.utils.response_format import get_agent_response_format
 from src.utils.card_builder import convert_to_card
 import json
 
@@ -112,7 +112,7 @@ class FoundryBot(ActivityHandler):
             )
 
             # 取得回應格式定義
-            response_format = get_genie_response_format()
+            response_format = get_agent_response_format()
 
             # 執行代理程式
             run = self.project_client.agents.runs.create_and_process(
