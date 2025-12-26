@@ -1,3 +1,7 @@
+"""
+提供 Foundry Agent 使用的 Genie 工具集管理功能
+"""
+
 import json
 from typing import Dict, List
 from azure.identity import DefaultAzureCredential

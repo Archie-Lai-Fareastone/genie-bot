@@ -1,4 +1,4 @@
-"""處理不同類型的 Genie 回應並轉換為 Adaptive Card"""
+"""處理不同類型的 agent 回應並轉換為 Adaptive Card"""
 
 from botbuilder.schema import Attachment
 from src.core.logger_config import get_logger

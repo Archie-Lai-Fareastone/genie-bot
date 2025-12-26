@@ -1,13 +1,12 @@
-from typing import Dict, List
-from botbuilder.core import ActivityHandler, TurnContext, MessageFactory
-from botbuilder.schema import ChannelAccount
+from botbuilder.core import TurnContext, MessageFactory
+from botbuilder.schema import Activity, ActivityTypes
 from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
 from azure.ai.agents.models import FunctionTool, ToolSet
 from fastapi import FastAPI
 
+from src.bot.base_bot import BaseBot
 from src.core.logger_config import get_logger
-from src.core.settings import get_settings
 from src.utils.genie_tools import genie_manager
 from src.utils.response_format import get_agent_response_format
 from src.utils.card_builder import convert_to_card
@@ -17,15 +16,15 @@ import json
 logger = get_logger(__name__)
 
 
-class FoundryBot(ActivityHandler):
+class FoundryBot(BaseBot):
     def __init__(self, app: FastAPI):
-        """初始化 Bot
+        """初始化 Foundry Bot
 
         Args:
             app: FastAPI 應用程式實例,用於存取 settings
         """
-        self.thread_dict: Dict[str, str] = {}
-        self.settings = get_settings(app)
+        # 呼叫父類別初始化
+        super().__init__(app)
 
         # 初始化 Azure 認證
         logger.info("======STEP 1: 正在初始化 Azure 認證======")
@@ -80,17 +79,14 @@ class FoundryBot(ActivityHandler):
         question = turn_context.activity.text.strip()
         user_id = turn_context.activity.from_property.id
 
-        # 檢查是否為重置命令
-        if question.lower() in ["重新開始", "reset", "新對話", "new"]:
-            if user_id in self.thread_dict and self.thread_dict[user_id]:
-                try:
-                    self.project_client.agents.threads.delete(self.thread_dict[user_id])
-                    logger.info(f"已刪除執行緒: {self.thread_dict[user_id]}")
-                except Exception as e:
-                    logger.warning(f"刪除執行緒失敗: {e}")
-                self.thread_dict[user_id] = None
-            await turn_context.send_activity("對話已重新開始！請問您有什麼問題？")
+        # 檢查並處理特殊命令
+        if await self.command_handler.handle_special_command(
+            question, turn_context, user_id, self.thread_dict, self.project_client
+        ):
             return
+
+        # 顯示打字指示器
+        await turn_context.send_activity(Activity(type=ActivityTypes.typing))
 
         try:
             logger.info(f"使用者 {user_id}: {question}")
@@ -106,6 +102,9 @@ class FoundryBot(ActivityHandler):
                 thread_id = self.thread_dict[user_id]
                 logger.info(f"使用既有執行緒: {thread_id}")
 
+            # 發送訊息前再次顯示打字指示器
+            await turn_context.send_activity(Activity(type=ActivityTypes.typing))
+            
             # 發送訊息
             self.project_client.agents.messages.create(
                 thread_id=thread_id, role="user", content=question
@@ -114,6 +113,9 @@ class FoundryBot(ActivityHandler):
             # 取得回應格式定義
             response_format = get_agent_response_format()
 
+            # 執行代理程式前再次顯示打字指示器
+            await turn_context.send_activity(Activity(type=ActivityTypes.typing))
+            
             # 執行代理程式
             run = self.project_client.agents.runs.create_and_process(
                 thread_id=thread_id,
@@ -163,12 +165,3 @@ class FoundryBot(ActivityHandler):
         except Exception as e:
             logger.error(f"處理訊息錯誤: {e}")
             await turn_context.send_activity(f"處理請求時發生錯誤: {e}")
-
-    async def on_members_added_activity(
-        self, members_added: List[ChannelAccount], turn_context: TurnContext
-    ):
-        """處理成員加入事件"""
-        for member in members_added:
-            if member.id != turn_context.activity.recipient.id:
-                await turn_context.send_activity("歡迎使用 Databricks Genie Agent！")
-                logger.info(f"歡迎訊息已發送給使用者: {member.id}")

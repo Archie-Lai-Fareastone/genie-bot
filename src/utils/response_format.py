@@ -1,4 +1,7 @@
-"""定義 AI Agent 回應格式的 JSON Schema"""
+"""
+規範 AI Agent 回應格式的 JSON Schema
+適用：Microsoft Foundry Agent Service
+"""
 
 from azure.ai.agents.models import (
     ResponseFormatJsonSchemaType,

@@ -35,6 +35,7 @@
 
 - (Will) 建立的 genie space：Finance_Dataset, Active_Dataset
 - (Ralph) 在 Databricks 給予 MobileAgent 在 genie space 中 can run 權限
+- 若要使用 GenieBot (不透過 foundry agent 直接與 genie 對話)，需使用 MobileAgent 的 access token，目前是由 Ralph 手動產生
 
 ## B. 上版程式調整
 
