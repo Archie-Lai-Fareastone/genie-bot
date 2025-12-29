@@ -1,3 +1,7 @@
+"""
+提供 Foundry Agent 使用的 Genie 工具集管理功能
+"""
+
 import json
 from typing import Dict, List
 from azure.identity import DefaultAzureCredential
@@ -11,10 +15,20 @@ logger = get_logger(__name__)
 
 
 class GenieManager:
-    """Genie 管理器"""
+    """
+    單例模式 (Singleton Pattern) Genie 管理器
+
+    * 使用單例模式確保全域只有一份連線實例,避免重複初始化和資源浪費。
+    * __new__() 是 Python 中用於建立物件實例的特殊方法。它在 __init__() 之前被呼叫，負責建立物件的記憶體空間。
+    * 第一次建立 GenieManager() → _instance 為 None → 建立新物件並保存
+    * 第二次建立 GenieManager() → _instance 已存在 → 回傳同一個物件
+    """
 
     _instance: "GenieManager" = None
     _genies: Dict[str, Genie] = {}
+    _credential: DefaultAzureCredential = None
+    _entra_id_audience_scope: str = None
+    _connections: Dict[str, dict] = {}
 
     def __new__(cls):
         if cls._instance is None:
@@ -43,6 +57,9 @@ class GenieManager:
             f"準備初始化 {len(connection_names)} 個 Genie 連線: {connection_names}"
         )
 
+        self._credential = credential
+        self._entra_id_audience_scope = entra_id_audience_scope
+
         for connection_name in connection_names:
             try:
                 logger.info(f"正在取得連線: {connection_name}")
@@ -51,6 +68,12 @@ class GenieManager:
                 if not genie_space_id:
                     logger.error(f"連線 {connection_name} 缺少 genie_space_id metadata")
                     raise ValueError(f"連線 {connection_name} 缺少 genie_space_id")
+
+                # 保存連線資訊，供token過期時重建使用
+                self._connections[connection_name] = {
+                    "target": connection.target,
+                    "genie_space_id": genie_space_id,
+                }
 
                 token = credential.get_token(entra_id_audience_scope).token
                 databricks_client = WorkspaceClient(
@@ -101,7 +124,24 @@ class GenieManager:
                 )
 
             logger.info(f"使用 Genie [{connection_name}] 處理問題: {question}")
-            response = self._genies[connection_name].ask_question(question)
+
+            try:
+                response = self._genies[connection_name].ask_question(question)
+            except Exception as e:
+                # Token過期時自動重建客戶端並重試
+                if "401" in str(e) or "Token is expired" in str(e):
+                    logger.warning(f"Token已過期,重新建立客戶端: {connection_name}")
+                    conn_info = self._connections[connection_name]
+                    token = self._credential.get_token(
+                        self._entra_id_audience_scope
+                    ).token
+                    self._genies[connection_name] = Genie(
+                        conn_info["genie_space_id"],
+                        client=WorkspaceClient(host=conn_info["target"], token=token),
+                    )
+                    response = self._genies[connection_name].ask_question(question)
+                else:
+                    raise e
 
             result = {
                 "connection_name": connection_name,

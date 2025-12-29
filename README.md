@@ -75,8 +75,23 @@ pip freeze > requirements.txt
 
 ### 環境變數
 
-- 建立 .env 檔案，確保 .env 檔案在 .gitignore 內
+#### 本地開發
+
+- 參考 .env.example 建立 .env 檔案，確保 .env 檔案在 .gitignore 內
 - 不要讓 github copilot 讀取到，只能讀取 .env.example 範例檔案
+
+#### Azure Web App
+
+- 在 Azure Web App 設定 -> 環境變數
+- 注意以下為必填，其他參考 .env.example
+
+```
+AZURE_TENANT_ID=
+AZURE_CLIENT_ID=
+AZURE_CLIENT_SECRET=
+APP_TYPE=SingleTenant
+WEBSITES_PORT=8000
+```
 
 ### 啟動 app
 

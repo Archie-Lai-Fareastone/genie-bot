@@ -20,7 +20,13 @@ class Settings:
     """
 
     def __init__(self):
-        self.app_env = os.getenv("APP_ENV", "development")
+        if (
+            os.getenv("AZURE_CLIENT_ID", "") != ""
+            and os.getenv("AZURE_CLIENT_SECRET", "") != ""
+        ):
+            self.app_env = "production"
+        else:
+            self.app_env = "development"
 
         # 應用程式配置
         self.app: Dict[str, Any] = {}
@@ -58,6 +64,7 @@ class Settings:
             "port": int(os.getenv("PORT", "8000")),
             "host": os.getenv("HOST", "0.0.0.0"),
             "release_version": os.getenv("APP_RELEASE_VERSION", "1.0.0"),
+            "bot_mode": os.getenv("BOT_MODE", "foundry"),
         }
 
         # Microsoft Bot Framework 配置
@@ -96,11 +103,24 @@ class Settings:
 
         # Databricks 配置
         entra_id_scope = os.getenv("DATABRICKS_ENTRA_ID_AUDIENCE_SCOPE")
+        databricks_host = os.getenv("DATABRICKS_HOST")
+        databricks_token = os.getenv("DATABRICKS_TOKEN")
+        genie_space_id = os.getenv("DATABRICKS_SPACE_ID")
+
         if not entra_id_scope:
             raise ValueError("缺少必要的環境變數: DATABRICKS_ENTRA_ID_AUDIENCE_SCOPE")
+        if not databricks_host:
+            raise ValueError("缺少必要的環境變數: DATABRICKS_HOST")
+        if not databricks_token:
+            raise ValueError("缺少必要的環境變數: DATABRICKS_TOKEN")
+        if not genie_space_id:
+            raise ValueError("缺少必要的環境變數: DATABRICKS_SPACE_ID")
 
         self.databricks = {
             "entra_id_audience_scope": entra_id_scope,
+            "host": databricks_host,
+            "token": databricks_token,
+            "genie_space_id": genie_space_id,
         }
 
     def set_config(self, category: str, key: str, value: Any) -> None:

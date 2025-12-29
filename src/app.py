@@ -13,7 +13,8 @@ from botbuilder.integration.aiohttp import (
     ConfigurationBotFrameworkAuthentication,
 )
 
-from src.bot import MyBot
+from src.bot.foundry_bot import FoundryBot
+from src.bot.genie_bot import GenieBot
 from src.core.logger_config import setup_logging, get_logger
 from src.core.settings import init_settings, get_settings
 
@@ -68,8 +69,15 @@ async def on_error(context: TurnContext, error: Exception):
 ADAPTER.on_turn_error = on_error
 
 # 建立機器人
-BOT = MyBot(app)
-logger.info("Bot 實例已建立")
+if settings.app["bot_mode"] == "foundry":
+    BOT = FoundryBot(app)
+    logger.info("FoundryBot 實例已建立")
+elif settings.app["bot_mode"] == "genie":
+    BOT = GenieBot(app)
+    logger.info("GenieBot 實例已建立")
+else:
+    logger.error(f"未知的 BOT_MODE: {settings.app['bot_mode']}")
+    raise ValueError(f"未知的 BOT_MODE: {settings.app['bot_mode']}")
 
 
 # 主要訊息處理端點

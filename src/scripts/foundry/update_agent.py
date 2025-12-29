@@ -16,8 +16,6 @@ from typing import Any, Callable, Set
 import os
 from dotenv import load_dotenv
 
-from src.utils.adaptive_card import adaptive_card
-
 load_dotenv()
 
 FOUNDRY_PROJECT_ENDPOINT = os.getenv("AZURE_FOUNDRY_PROJECT_ENDPOINT")
@@ -59,7 +57,6 @@ if __name__ == "__main__":
     toolset = ToolSet()
     user_functions: Set[Callable[..., Any]] = {
         ask_genie,
-        adaptive_card,
     }
     functions = FunctionTool(functions=user_functions)
     toolset.add(functions)
@@ -71,13 +68,11 @@ if __name__ == "__main__":
         # 更新 agent
         agent = project_client.agents.update_agent(
             agent_id=AGENT_ID,
-            instructions="""**IMPORTANT: Always use adaptive_card tool and return only the json content without any additional explanation.  
-* The correct syntax should start with {
-    "type": "AdaptiveCard",
-    "version": "1.5",
-    "body": [...**
-* For data querying tasks, Use the ask_genie tool to get answers by querying Databricks Genie and then present the results using adaptive_card. When using ask_genie, always specify the correct connection_name based on the user's question.
-* 一律使用繁體中文問答 
+            instructions="""* 一律使用繁體中文問答
+* 回傳格式必須包含一個或多個 card_type 以及其他對應欄位
+* 如果使用者問題和 "active" 或 "finance" 資料相關，使用 ask_genie 工具取得資料，取得結果後回傳給使用者
+* 使用 ask_genie 的時候要根據使用者問題傳遞 connection_name
+* 單一問題使用 ask_genie 次數不得超過 2 次
             """,
             toolset=toolset,
         )
