@@ -15,7 +15,9 @@
 ├── mlruns/     # 呼叫 genie 紀錄
 ├── src/
 │   ├── app.py
-│   ├── bot.py
+│   ├── bot/
+│   │   ├── foundry_bot.py      # 連接 Foundry Agent Service 的 Bot
+│   │   └── genie_bot.py        # 連接 Databricks Genie 的 Bot
 │   ├── core/
 │   │   ├── logger_config.py    # 日誌設定
 │   │   └── settings.py         # 集中管理環境變數設定

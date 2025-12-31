@@ -21,6 +21,7 @@ class GenieBot(BaseBot):
             app: FastAPI 應用程式實例,用於存取 settings
         """
         super().__init__(app)
+        self.bot_mode = "genie"
 
         # 初始化 Databricks 客戶端
         logger.info("======正在初始化 Databricks 客戶端======")
@@ -96,7 +97,7 @@ class GenieBot(BaseBot):
             question, turn_context, user_id, self.conversation_dict, None
         ):
             return
-        
+
         # 顯示打字指示器
         await turn_context.send_activity(Activity(type=ActivityTypes.typing))
 
@@ -162,8 +163,10 @@ class GenieBot(BaseBot):
                         if hasattr(query, "statement_id") and query.statement_id:
                             try:
                                 # 處理查詢結果前再次顯示打字指示器
-                                await turn_context.send_activity(Activity(type=ActivityTypes.typing))
-                                
+                                await turn_context.send_activity(
+                                    Activity(type=ActivityTypes.typing)
+                                )
+
                                 loop = asyncio.get_running_loop()
                                 statement_result = await loop.run_in_executor(
                                     None,

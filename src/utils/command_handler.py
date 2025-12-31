@@ -38,6 +38,18 @@ class CommandHandler:
         return question.lower() in ["說明", "help", "幫助"]
 
     @staticmethod
+    def _is_greet_command(question: str) -> bool:
+        """檢查是否為歡迎指令
+
+        Args:
+            question: 使用者輸入的訊息
+
+        Returns:
+            bool: 是否為說明命令
+        """
+        return question.lower() in ["hello", "hi", "你好", "您好"]
+
+    @staticmethod
     async def _handle_reset_command(
         turn_context: TurnContext,
         user_id: str,
@@ -113,6 +125,11 @@ class CommandHandler:
         Returns:
             bool: 是否已處理特殊命令（True 表示已處理，False 表示非特殊命令）
         """
+        # 檢查歡迎命令
+        if self._is_greet_command(question):
+            await self.handle_greet(turn_context, bot_mode=self.bot_mode)
+            return True
+
         # 檢查重置命令
         if self._is_reset_command(question):
             await self._handle_reset_command(

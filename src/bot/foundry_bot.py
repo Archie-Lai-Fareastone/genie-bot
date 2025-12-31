@@ -25,6 +25,7 @@ class FoundryBot(BaseBot):
         """
         # 呼叫父類別初始化
         super().__init__(app)
+        self.bot_mode = "foundry"
 
         # 初始化 Azure 認證
         logger.info("======STEP 1: 正在初始化 Azure 認證======")
@@ -104,7 +105,7 @@ class FoundryBot(BaseBot):
 
             # 發送訊息前再次顯示打字指示器
             await turn_context.send_activity(Activity(type=ActivityTypes.typing))
-            
+
             # 發送訊息
             self.project_client.agents.messages.create(
                 thread_id=thread_id, role="user", content=question
@@ -115,7 +116,7 @@ class FoundryBot(BaseBot):
 
             # 執行代理程式前再次顯示打字指示器
             await turn_context.send_activity(Activity(type=ActivityTypes.typing))
-            
+
             # 執行代理程式
             run = self.project_client.agents.runs.create_and_process(
                 thread_id=thread_id,
@@ -152,12 +153,14 @@ class FoundryBot(BaseBot):
                             except json.JSONDecodeError as e:
                                 logger.error(f"回應解析失敗: {e}")
                                 await turn_context.send_activity(
-                                    "回應內容格式錯誤，無法解析。"
+                                    "回應內容格式錯誤，請聯絡系統管理員。"
                                 )
                                 return
                             except ValueError as e:
                                 logger.error(f"卡片建立失敗: {e}")
-                                await turn_context.send_activity(f"卡片建立錯誤: {e}")
+                                await turn_context.send_activity(
+                                    f"卡片建立錯誤，請聯絡系統管理員。"
+                                )
                                 return
 
             await turn_context.send_activity("抱歉,我無法取得回應。")

@@ -144,10 +144,10 @@ def create_chart_card(
 
 
 def convert_to_card(response_data: dict) -> Attachment:
-    """將 Genie 回應轉換為 Adaptive Card
+    """將 agent 回應轉換為 Adaptive Card
 
     Args:
-        response_data: Genie 回應資料，包含 'cards' 欄位
+        response_data: Agent 回應資料，包含 'cards' 欄位
 
     Returns:
         Adaptive Card Attachment
@@ -156,6 +156,7 @@ def convert_to_card(response_data: dict) -> Attachment:
         ValueError: 當卡片類型不支援時
     """
     body_elements = []
+    logger.info(f"輸入資料: {response_data}")
 
     for item in response_data.get("cards", []):
         card_type = item.get("card_type")
@@ -178,7 +179,7 @@ def convert_to_card(response_data: dict) -> Attachment:
         body_elements.extend(card["body"])
 
     logger.info(
-        f"建立包含 {len(response_data.get('cards', []))} 個元素的 Adaptive Card"
+        f"建立包含 {len(response_data.get('cards', []))} 個元素的 Adaptive Card",
     )
 
     card_content = {
