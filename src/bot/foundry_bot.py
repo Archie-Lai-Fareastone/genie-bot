@@ -4,10 +4,11 @@ from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
 from azure.ai.agents.models import FunctionTool, ToolSet
 from fastapi import FastAPI
+from datetime import datetime
 
 from src.bot.base_bot import BaseBot
 from src.core.logger_config import get_logger
-from src.utils.genie_tools import genie_manager
+from src.utils.genie_manager import GenieManager
 from src.utils.response_format import get_agent_response_format
 from src.utils.card_builder import convert_to_card
 import json
@@ -42,6 +43,9 @@ class FoundryBot(BaseBot):
 
         self.agent_id = self.settings.azure_foundry["agent_id"]
 
+        # Genie 管理器（由 Bot 實例持有，避免全域狀態）
+        self.genie_manager = GenieManager()
+
         # 設定工具集
         logger.info("======STEP 3: 正在初始化 AI Agent 工具集======")
         try:
@@ -55,7 +59,7 @@ class FoundryBot(BaseBot):
         try:
             # 初始化 Genie
             logger.info("開始初始化 Genie...")
-            genies = genie_manager.initialize(
+            genies = self.genie_manager.initialize(
                 self.project_client,
                 self.credential,
                 self.settings.azure_foundry["connection_names"],
@@ -66,7 +70,7 @@ class FoundryBot(BaseBot):
             # 設定工具集
             logger.info("開始設定 ToolSet...")
             toolset = ToolSet()
-            toolset.add(FunctionTool(functions={genie_manager.ask_genie}))
+            toolset.add(FunctionTool(functions={self.genie_manager.ask_genie}))
             self.project_client.agents.enable_auto_function_calls(toolset)
             logger.info(f"工具集設定完成,可用的 Genie 連線: {list(genies.keys())}")
 
@@ -76,6 +80,7 @@ class FoundryBot(BaseBot):
 
     async def on_message_activity(self, turn_context: TurnContext):
         """處理使用者訊息"""
+
         question = turn_context.activity.text.strip()
         user_id = turn_context.activity.from_property.id
 
@@ -102,9 +107,12 @@ class FoundryBot(BaseBot):
                 thread_id = self.thread_dict[user_id]
                 logger.info(f"使用既有執行緒: {thread_id}")
 
+            # 更新最後使用時間
+            self.thread_last_used[user_id] = datetime.now()
+
             # 發送訊息前再次顯示打字指示器
             await turn_context.send_activity(Activity(type=ActivityTypes.typing))
-            
+
             # 發送訊息
             self.project_client.agents.messages.create(
                 thread_id=thread_id, role="user", content=question
@@ -115,7 +123,7 @@ class FoundryBot(BaseBot):
 
             # 執行代理程式前再次顯示打字指示器
             await turn_context.send_activity(Activity(type=ActivityTypes.typing))
-            
+
             # 執行代理程式
             run = self.project_client.agents.runs.create_and_process(
                 thread_id=thread_id,
@@ -152,12 +160,14 @@ class FoundryBot(BaseBot):
                             except json.JSONDecodeError as e:
                                 logger.error(f"回應解析失敗: {e}")
                                 await turn_context.send_activity(
-                                    "回應內容格式錯誤，無法解析。"
+                                    "回應內容格式錯誤，請聯絡系統管理員。"
                                 )
                                 return
                             except ValueError as e:
                                 logger.error(f"卡片建立失敗: {e}")
-                                await turn_context.send_activity(f"卡片建立錯誤: {e}")
+                                await turn_context.send_activity(
+                                    f"卡片建立錯誤，請聯絡系統管理員。"
+                                )
                                 return
 
             await turn_context.send_activity("抱歉,我無法取得回應。")

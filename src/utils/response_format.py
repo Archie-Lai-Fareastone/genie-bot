@@ -13,9 +13,9 @@ def get_agent_response_format() -> ResponseFormatJsonSchemaType:
     """取得 Genie Agent 的回應格式定義
 
     支援三種格式：
-    1. text/sql: 純文字或 SQL 查詢回應
-    2. table: 表格資料回應
-    3. chart: 圖表資料回應
+    1. card_type=chart: 繪製圖表
+    2. card_type=table: 顯示表格資料
+    3. card_type=text, card_type=sql: 純文字或 SQL 查詢回應
 
     Returns:
         ResponseFormatJsonSchemaType: Azure AI Agents 的回應格式物件
@@ -78,10 +78,11 @@ def get_agent_response_format() -> ResponseFormatJsonSchemaType:
             "請回傳包含 'cards' 欄位的物件，其值為卡片陣列。每個卡片根據 card_type 提供對應欄位：\n"
             "- 如果 card_type 是 'text' 或 'sql'：必須提供 'content' 欄位\n"
             "- 如果 card_type 是 'table'：必須提供 'headers' 和 'rows' 欄位\n"
-            "- 如果 card_type 是 'chart'：必須提供 'chart_type'、'labels' 和 'values' 欄位\n\n"
+            "- 如果 card_type 是 'chart'：必須提供 'chart_type'、'labels' 和 'values' 欄位。**並且確保 labels 和 values 長度一致**。\n\n"
             "正確格式範例：\n"
-            "{'cards': [{'card_type': 'text', 'content': '這是文字回應'}]}\n"
-            "{'cards': [{'card_type': 'text', 'content': '說明'}, {'card_type': 'table', 'headers': ['姓名', '年齡'], 'rows': [['張三', '25']]}]}"
+            "{'cards': [{'card_type': 'text', 'content': '這是一段文字內容'}]}\n"
+            "{'cards': [{'card_type': 'text', 'content': '以下是圖表'}, {'card_type': 'chart', 'chart_type': 'vertical_bar', 'labels': ['一月', '二月'], 'values': ['10', '20']}]}\n"
+            "{'cards': [{'card_type': 'text', 'content': '以下是表格'}, {'card_type': 'table', 'headers': ['姓名', '年齡'], 'rows': [['張三', '25']]}]}\n"
         ),
     )
 

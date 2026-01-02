@@ -51,8 +51,7 @@ else:
 async def on_error(context: TurnContext, error: Exception):
     logger.error(f"[on_turn_error] 未處理的錯誤: {error}", exc_info=True)
 
-    await context.send_activity("機器人遇到了錯誤或錯誤。")
-    await context.send_activity("要繼續執行此機器人，請修復機器人原始程式碼。")
+    await context.send_activity("機器人遇到了錯誤，請稍後再試。")
 
     if context.activity.channel_id == "emulator":
         trace_activity = Activity(
@@ -78,6 +77,13 @@ elif settings.app["bot_mode"] == "genie":
 else:
     logger.error(f"未知的 BOT_MODE: {settings.app['bot_mode']}")
     raise ValueError(f"未知的 BOT_MODE: {settings.app['bot_mode']}")
+
+
+# 啟動事件 - 啟動背景清理任務
+@app.on_event("startup")
+async def startup_event():
+    BOT.start_cleanup_task()
+    logger.info("應用啟動完成，清理任務已啟動")
 
 
 # 主要訊息處理端點
