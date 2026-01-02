@@ -2,7 +2,7 @@
 
 from botbuilder.schema import Attachment
 from src.core.logger_config import get_logger
-from src.utils.chart_tools import chart_to_base64, ChartType
+from utils.chart_tool import ChartTool
 
 logger = get_logger(__name__)
 
@@ -106,7 +106,9 @@ def create_table_card(headers: list[str], rows: list[list[str]]) -> dict:
 
 
 def create_chart_card(
-    labels: list[str], values: list[str], chart_type: ChartType = "vertical_bar"
+    labels: list[str],
+    values: list[str],
+    chart_type: ChartTool.ChartType = "vertical_bar",
 ) -> dict:
     """建立圖表卡片
 
@@ -122,7 +124,7 @@ def create_chart_card(
     float_values = [float(v) for v in values]
 
     # 使用 chart_tools 生成圖表
-    chart_data_uri = chart_to_base64(float_values, labels, chart_type)
+    chart_data_uri = ChartTool.chart_to_base64(float_values, labels, chart_type)
 
     return {
         "type": "AdaptiveCard",

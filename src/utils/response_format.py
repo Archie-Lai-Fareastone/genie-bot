@@ -78,7 +78,7 @@ def get_agent_response_format() -> ResponseFormatJsonSchemaType:
             "請回傳包含 'cards' 欄位的物件，其值為卡片陣列。每個卡片根據 card_type 提供對應欄位：\n"
             "- 如果 card_type 是 'text' 或 'sql'：必須提供 'content' 欄位\n"
             "- 如果 card_type 是 'table'：必須提供 'headers' 和 'rows' 欄位\n"
-            "- 如果 card_type 是 'chart'：必須提供 'chart_type'、'labels' 和 'values' 欄位\n\n"
+            "- 如果 card_type 是 'chart'：必須提供 'chart_type'、'labels' 和 'values' 欄位。**並且確保 labels 和 values 長度一致**。\n\n"
             "正確格式範例：\n"
             "{'cards': [{'card_type': 'text', 'content': '這是一段文字內容'}]}\n"
             "{'cards': [{'card_type': 'text', 'content': '以下是圖表'}, {'card_type': 'chart', 'chart_type': 'vertical_bar', 'labels': ['一月', '二月'], 'values': ['10', '20']}]}\n"

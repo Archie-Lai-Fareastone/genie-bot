@@ -1,3 +1,12 @@
+"""
+Genie Bot 模組
+
+此模組負責與 Databricks Genie API 互動，並處理使用者訊息。
+
+FIXME:
+- 尚未實作同一 session 繼續對話的功能。
+"""
+
 import asyncio
 from typing import Optional
 from botbuilder.core import TurnContext, MessageFactory

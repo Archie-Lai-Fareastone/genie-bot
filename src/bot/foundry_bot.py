@@ -7,7 +7,7 @@ from fastapi import FastAPI
 
 from src.bot.base_bot import BaseBot
 from src.core.logger_config import get_logger
-from src.utils.genie_tools import genie_manager
+from utils.genie_manager import GenieManager
 from src.utils.response_format import get_agent_response_format
 from src.utils.card_builder import convert_to_card
 import json
@@ -43,6 +43,9 @@ class FoundryBot(BaseBot):
 
         self.agent_id = self.settings.azure_foundry["agent_id"]
 
+        # Genie 管理器（由 Bot 實例持有，避免全域狀態）
+        self.genie_manager = GenieManager()
+
         # 設定工具集
         logger.info("======STEP 3: 正在初始化 AI Agent 工具集======")
         try:
@@ -56,7 +59,7 @@ class FoundryBot(BaseBot):
         try:
             # 初始化 Genie
             logger.info("開始初始化 Genie...")
-            genies = genie_manager.initialize(
+            genies = self.genie_manager.initialize(
                 self.project_client,
                 self.credential,
                 self.settings.azure_foundry["connection_names"],
@@ -67,7 +70,7 @@ class FoundryBot(BaseBot):
             # 設定工具集
             logger.info("開始設定 ToolSet...")
             toolset = ToolSet()
-            toolset.add(FunctionTool(functions={genie_manager.ask_genie}))
+            toolset.add(FunctionTool(functions={self.genie_manager.ask_genie}))
             self.project_client.agents.enable_auto_function_calls(toolset)
             logger.info(f"工具集設定完成,可用的 Genie 連線: {list(genies.keys())}")
 

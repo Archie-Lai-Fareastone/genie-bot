@@ -9,8 +9,8 @@
 
 ### 1. Azure 資源建立
 
-> 注意事項：確保網路接通，MobileAgent 身分被建立
-> tenant: `FarEasTone Telecommunications Co., Ltd`
+> 注意事項：確保網路接通，MobileAgent 身分被建立  
+> tenant: `FarEasTone Telecommunications Co., Ltd`  
 > subscription: `IDTT-AIVerse Platform`
 
 - (Ralph) 在同一資源群組建立 `fet-mobilebot-webapp`, `fet-mobile-bot-dev`
@@ -22,15 +22,15 @@
 
 ### 2. Foundry Agent 服務設定
 
-> 注意事項：給予 MobileAgent foundry 存取權限
-> Foundry resource: `fetdwaifndry26`
+> 注意事項：給予 MobileAgent foundry 存取權限  
+> Foundry resource: `fetdwaifndry26`  
 > Foundry project: `dwfndry003`
 
 - (Ralph) 在 Foundry 給予 MobileAgent 在專案中 Azure AI User 權限
 
 ### 3. Databricks Genie 設定
 
-> 注意事項：給予 MobileAgent genie 存取權限
+> 注意事項：給予 MobileAgent genie 存取權限  
 > Databricks workspace: `fet-adb-rag-bst`
 
 - (Will) 建立的 genie space：Finance_Dataset, Active_Dataset

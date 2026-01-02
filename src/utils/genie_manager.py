@@ -16,24 +16,17 @@ logger = get_logger(__name__)
 
 class GenieManager:
     """
-    單例模式 (Singleton Pattern) Genie 管理器
+    Genie 管理器
 
-    * 使用單例模式確保全域只有一份連線實例,避免重複初始化和資源浪費。
-    * __new__() 是 Python 中用於建立物件實例的特殊方法。它在 __init__() 之前被呼叫，負責建立物件的記憶體空間。
-    * 第一次建立 GenieManager() → _instance 為 None → 建立新物件並保存
-    * 第二次建立 GenieManager() → _instance 已存在 → 回傳同一個物件
+    由呼叫端（例如 Bot 實例）持有此管理器，將狀態限制在該 Bot 生命週期內，
+    避免使用全域狀態造成難以追蹤的副作用。
     """
 
-    _instance: "GenieManager" = None
-    _genies: Dict[str, Genie] = {}
-    _credential: DefaultAzureCredential = None
-    _entra_id_audience_scope: str = None
-    _connections: Dict[str, dict] = {}
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
+    def __init__(self):
+        self._genies: Dict[str, Genie] = {}
+        self._credential: DefaultAzureCredential | None = None
+        self._entra_id_audience_scope: str | None = None
+        self._connections: Dict[str, dict] = {}
 
     def initialize(
         self,
@@ -132,6 +125,11 @@ class GenieManager:
                 if "401" in str(e) or "Token is expired" in str(e):
                     logger.warning(f"Token已過期,重新建立客戶端: {connection_name}")
                     conn_info = self._connections[connection_name]
+                    if not self._credential or not self._entra_id_audience_scope:
+                        raise RuntimeError(
+                            "GenieManager 尚未 initialize，無法重新取得 token"
+                        )
+
                     token = self._credential.get_token(
                         self._entra_id_audience_scope
                     ).token
@@ -155,7 +153,3 @@ class GenieManager:
         except Exception as e:
             logger.error(f"Genie [{connection_name}] 提問失敗: {e}", exc_info=True)
             return json.dumps({"error": str(e)})
-
-
-# 全域實例
-genie_manager = GenieManager()
