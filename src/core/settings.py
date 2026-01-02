@@ -96,8 +96,8 @@ class Settings:
             "project_endpoint": project_endpoint,
             "agent_id": agent_id,
             "connection_names": [
-                "Active_dataset_Rag_bst",
-                "Finance_dataset_Rag_bst",
+                name.strip()
+                for name in os.getenv("AZURE_FOUNDRY_CONNECTION_NAMES", "").split(",")
             ],
         }
 

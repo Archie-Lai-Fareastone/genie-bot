@@ -3,6 +3,20 @@
 > 2025/12/22 ~ 2025/12/24
 > Author: Archie Lai
 
+- 上版指令
+
+```cmd
+tar -a -c -f deploy.zip src requirements.txt
+```
+
+```cmd
+az webapp deploy ^
+    --name fet-mobilebot-webapp ^
+    --resource-group fet-rag-bst-rg ^
+    --src-path deploy.zip ^
+    --type zip
+```
+
 ## A. 部屬環境設定
 
 - 重點：網路接通，給 MobileAgent 權限

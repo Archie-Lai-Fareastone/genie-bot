@@ -16,14 +16,15 @@
 ├── src/
 │   ├── app.py
 │   ├── bot/
+│   │   ├── base_bot.py         # 機器人基底類別
 │   │   ├── foundry_bot.py      # 連接 Foundry Agent Service 的 Bot
 │   │   └── genie_bot.py        # 連接 Databricks Genie 的 Bot
 │   ├── core/
 │   │   ├── logger_config.py    # 日誌設定
 │   │   └── settings.py         # 集中管理環境變數設定
 │   ├── scripts/
-│   │   └── foundry/            # foundry project 一次性操作
-│   └── utils/
+│   │   └── foundry/            # foundry project 一次性操作 (獨立於 bot)
+│   └── utils/                  # 工具函式
 ├── .env                        # 環境變數檔案
 ├── .env.example                # 環境變數範例檔案
 ```
@@ -33,7 +34,7 @@
 - [DatabricksGenieBOT](https://github.com/carrossoni/DatabricksGenieBOT/tree/main)
 - 注意事項：
   1. 參考專案使用 `aiohttp`，本專案改用 `FastAPI` 框架
-  2. 參考專案架構為 webapp <--> databricks genie，本專案架構為 teams bot <--> foundry agent <--> databicks genie，呼叫對象為 Microsoft Foundry Agent Service，因此不須設定 databricks host, genie space id 等資訊。
+  2. 參考專案架構為 webapp <--> databricks genie (GenieBot)，本專案 FoundryBot 架構為 teams bot <--> foundry agent <--> databicks genie，呼叫對象為 Microsoft Foundry Agent Service，若不使用 GenieBot 則不須設定 databricks host, genie space id 等資訊。
 
 ## 2. 開發環境
 
@@ -217,8 +218,8 @@ tar -a -c -f deploy.zip src requirements.txt
 
 ```cmd
 az webapp deploy ^
-    --name fet-mobilebot-webapp ^
-    --resource-group fet-rag-bst-rg ^
+    --name YOUR_WEBAPP ^
+    --resource-group YOUR_RESOURCE_GROUP ^
     --src-path deploy.zip ^
     --type zip
 ```
@@ -230,3 +231,14 @@ az webapp deploy ^
 ```sh
 python3 -m uvicorn src.app:app --host 0.0.0.0 --port 8000 --workers 2 --log-level info
 ```
+
+## 6. 發佈 teams
+
+- **https://dev.teams.cloud.microsoft/home**
+
+* Basic information: 填寫 app name, description...
+* Branding: 上傳 192x192 pixels color icon, 32x32 pixels outline icon
+* App features: 選擇 Bot，bot id 是 AZURE_CLIENT_ID，scope personal
+* App package editor: 檢查 manifest.json
+* Languages: zh-tw
+* Domains: webapp url (不含 http(s)://)
