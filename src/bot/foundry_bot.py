@@ -4,10 +4,11 @@ from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
 from azure.ai.agents.models import FunctionTool, ToolSet
 from fastapi import FastAPI
+from datetime import datetime
 
 from src.bot.base_bot import BaseBot
 from src.core.logger_config import get_logger
-from utils.genie_manager import GenieManager
+from src.utils.genie_manager import GenieManager
 from src.utils.response_format import get_agent_response_format
 from src.utils.card_builder import convert_to_card
 import json
@@ -25,7 +26,6 @@ class FoundryBot(BaseBot):
         """
         # 呼叫父類別初始化
         super().__init__(app)
-        self.bot_mode = "foundry"
 
         # 初始化 Azure 認證
         logger.info("======STEP 1: 正在初始化 Azure 認證======")
@@ -80,6 +80,7 @@ class FoundryBot(BaseBot):
 
     async def on_message_activity(self, turn_context: TurnContext):
         """處理使用者訊息"""
+
         question = turn_context.activity.text.strip()
         user_id = turn_context.activity.from_property.id
 
@@ -105,6 +106,9 @@ class FoundryBot(BaseBot):
             else:
                 thread_id = self.thread_dict[user_id]
                 logger.info(f"使用既有執行緒: {thread_id}")
+
+            # 更新最後使用時間
+            self.thread_last_used[user_id] = datetime.now()
 
             # 發送訊息前再次顯示打字指示器
             await turn_context.send_activity(Activity(type=ActivityTypes.typing))

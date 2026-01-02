@@ -13,6 +13,9 @@ logger = get_logger(__name__)
 class CommandHandler:
     """處理特殊命令的處理器類別"""
 
+    def __init__(self, bot_mode: str):
+        self.bot_mode = bot_mode
+
     @staticmethod
     def _is_reset_command(question: str) -> bool:
         """檢查訊息是否為重置命令
@@ -90,16 +93,15 @@ class CommandHandler:
         )
         await turn_context.send_activity(help_message)
 
-    @staticmethod
-    async def handle_greet(turn_context: TurnContext, bot_mode: str) -> None:
+    async def handle_greet(self, turn_context: TurnContext) -> None:
         """處理歡迎訊息
 
         Args:
             turn_context: Bot 的對話上下文
         """
-        if bot_mode == "foundry":
+        if self.bot_mode == "foundry":
             greetings = "👋 歡迎使用「大數據平台 Mobile 智靈」(Foundry Agent)！\n\n請輸入您要查詢的數據問題，或輸入 help 取得幫助"
-        elif bot_mode == "genie":
+        elif self.bot_mode == "genie":
             greetings = "👋 歡迎使用「大數據平台 Mobile 智靈」(Databricks Genie)！\n\n請輸入您要查詢的數據問題，或輸入 help 取得幫助"
         else:
             greetings = "歡迎使用本服務！請聯絡管理員設定正確的 Bot 類型。"
@@ -127,7 +129,7 @@ class CommandHandler:
         """
         # 檢查歡迎命令
         if self._is_greet_command(question):
-            await self.handle_greet(turn_context, bot_mode=self.bot_mode)
+            await self.handle_greet(turn_context)
             return True
 
         # 檢查重置命令

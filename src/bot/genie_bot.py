@@ -14,6 +14,7 @@ from botbuilder.schema import Activity, ActivityTypes
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.dashboards import GenieAPI
 from fastapi import FastAPI
+from datetime import datetime
 
 from src.bot.base_bot import BaseBot
 from src.core.logger_config import get_logger
@@ -30,7 +31,6 @@ class GenieBot(BaseBot):
             app: FastAPI 應用程式實例,用於存取 settings
         """
         super().__init__(app)
-        self.bot_mode = "genie"
 
         # 初始化 Databricks 客戶端
         logger.info("======正在初始化 Databricks 客戶端======")
@@ -41,9 +41,6 @@ class GenieBot(BaseBot):
         self.genie_api = GenieAPI(self.workspace_client.api_client)
         self.genie_space_id = self.settings.databricks["genie_space_id"]
         logger.info("Databricks Genie 客戶端已初始化")
-
-        # 儲存對話 ID
-        self.conversation_dict = {}
 
     async def ask_genie(
         self, question: str, conversation_id: Optional[str] = None
@@ -98,12 +95,17 @@ class GenieBot(BaseBot):
 
     async def on_message_activity(self, turn_context: TurnContext):
         """處理使用者訊息"""
+
         question = turn_context.activity.text.strip()
         user_id = turn_context.activity.from_property.id
 
+        # 更新最後使用時間
+        if user_id in self.thread_dict:
+            self.thread_last_used[user_id] = datetime.now()
+
         # 檢查並處理特殊命令
         if await self.command_handler.handle_special_command(
-            question, turn_context, user_id, self.conversation_dict, None
+            question, turn_context, user_id, self.thread_dict, None
         ):
             return
 
@@ -114,7 +116,8 @@ class GenieBot(BaseBot):
             logger.info(f"使用者 {user_id}: {question}")
 
             # 取得或建立對話
-            conversation_id = self.conversation_dict.get(user_id)
+            conversation_id = self.thread_dict.get(user_id)
+            logger.info(f"使用對話 ID: {conversation_id}")
 
             # 呼叫 Genie API 前再次顯示打字指示器
             await turn_context.send_activity(Activity(type=ActivityTypes.typing))
@@ -125,7 +128,7 @@ class GenieBot(BaseBot):
             )
 
             # 儲存對話 ID
-            self.conversation_dict[user_id] = new_conversation_id
+            self.thread_dict[user_id] = new_conversation_id
 
             # 準備卡片資料
             cards = []
