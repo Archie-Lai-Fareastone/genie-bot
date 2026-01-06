@@ -81,8 +81,8 @@ class FoundryBot(BaseBot):
     async def on_message_activity(self, turn_context: TurnContext):
         """處理使用者訊息"""
 
-        question = turn_context.activity.text.strip()
         user_id = turn_context.activity.from_property.id
+        question = (turn_context.activity.text or "").strip()
 
         # 檢查並處理特殊命令
         if await self.command_handler.handle_special_command(
