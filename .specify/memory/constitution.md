@@ -7,6 +7,7 @@
 - All code must adhere to established coding standards and best practices.
 - Code reviews are mandatory for all changes to ensure maintainability and readability.
 - Documentation must accompany complex logic to aid future developers.
+- Keep code simple and avoid unnecessary complexity.
 
 **Rationale:** High-quality code reduces technical debt and ensures long-term project sustainability.
 
