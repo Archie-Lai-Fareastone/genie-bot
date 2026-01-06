@@ -40,9 +40,6 @@ class Settings:
         # Databricks 配置
         self.databricks: Dict[str, Any] = {}
 
-        # Microsoft Graph API 配置
-        self.graph_api: Dict[str, Any] = {}
-
         # 載入所有配置
         self._load_config()
 
@@ -124,16 +121,6 @@ class Settings:
             "host": databricks_host,
             "token": databricks_token,
             "genie_space_id": genie_space_id,
-        }
-
-        # Microsoft Graph API 配置：複用 Bot Framework 的 Service Principal 認證
-        # 注意: Service Principal 需要有 Files.Read.All 應用程式權限
-        self.graph_api = {
-            "client_id": os.getenv("AZURE_CLIENT_ID", ""),
-            "client_secret": os.getenv("AZURE_CLIENT_SECRET", ""),
-            "tenant_id": os.getenv("AZURE_TENANT_ID", ""),
-            "authority": f"https://login.microsoftonline.com/{os.getenv('AZURE_TENANT_ID', '')}",
-            "scope": ["https://graph.microsoft.com/.default"],
         }
 
     def set_config(self, category: str, key: str, value: Any) -> None:

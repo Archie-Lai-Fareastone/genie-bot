@@ -9,49 +9,32 @@
 
 > **Note**: This feature cannot be tested locally as it relies on Teams integration and OneDrive access. It MUST be deployed to a environment accessible by Teams and tested manually by a user.
 
-### User Story 1 - Secure Multiple File Upload and Access (Priority: P1)
+### User Story 1 - Secure File Upload and Access (Priority: P1)
 
-A user needs to share one or more documents with the bot so the bot can process their content. The user uploads the files directly in the Teams chat, and the bot automatically gains the necessary permissions to read them from the user's OneDrive.
+A user needs to share a document with the bot so the bot can process its content. The user uploads the file directly in the Teams chat, and the bot automatically gains the necessary permissions to read it from the user's OneDrive.
 
-**Why this priority**: This is the core functionality that enables all subsequent file-based features. Supporting multiple files allows for richer data processing (e.g., comparing documents).
+**Why this priority**: This is the core functionality that enables all subsequent file-based features. Without secure upload and read access, the feature provides no value.
 
-**Independent Test**: Can be fully tested by a user uploading multiple PDF or text files in Teams and verifying that the bot can retrieve the metadata and content for all uploaded files using its Service Principal credentials.
+**Independent Test**: Can be fully tested by a user uploading a single PDF or text file in Teams and verifying that the bot can retrieve the file metadata and content using its Service Principal credentials.
 
 **Acceptance Scenarios**:
 
-1. **Given** the bot has prompted for files, **When** the user uploads multiple files and grants consent for each, **Then** the bot should receive `fileConsentAccept` events for each file with their respective download URLs.
-2. **Given** valid file download URLs, **When** the bot attempts to read the files using the Service Principal, **Then** the content of all files should be successfully retrieved.
+1. **Given** the bot has prompted for a file, **When** the user uploads a file and grants consent, **Then** the bot should receive a `fileConsentAccept` event with the download URL.
+2. **Given** a valid file download URL, **When** the bot attempts to read the file using the Service Principal, **Then** the file content should be successfully retrieved.
 
 ---
 
-### User Story 2 - Multiple Upload Confirmation Feedback (Priority: P2)
+### User Story 2 - Upload Confirmation Feedback (Priority: P2)
 
-After a user successfully uploads one or more files, the bot should provide immediate and clear feedback confirming all files that have been received and are being processed.
+After a user successfully uploads a file, the bot should provide immediate and clear feedback confirming that the file has been received and is being processed.
 
-**Why this priority**: Essential for clarity, especially when multiple files are involved, so the user knows exactly which files the bot has successfully accessed.
+**Why this priority**: Essential for a good user experience, ensuring the user knows their action was successful and what to expect next.
 
-**Independent Test**: Can be tested by observing the Adaptive Card response sent by the bot after it has processed the `fileConsentAccept` events, ensuring it lists all uploaded files.
-
-**Acceptance Scenarios**:
-
-1. **Given** multiple successful file uploads and permission grants, **When** the bot completes the initial retrieval, **Then** it must send an Adaptive Card containing a list of all file names and a success message.
-
----
-
-### User Story 3 - Upload Session Management and Recovery (Priority: P2)
-
-The bot needs to handle interrupted upload sessions gracefully, including automatic timeout cleanup, user-initiated cancellation, and the ability to restart failed upload batches.
-
-**Why this priority**: Prevents system from getting stuck in pending states and provides users with control over the upload process.
-
-**Independent Test**: Can be tested by initiating an upload, waiting for timeout, cancelling mid-process, or intentionally declining some files, then verifying state is properly cleaned up and new uploads can be initiated.
+**Independent Test**: Can be tested by observing the Adaptive Card response sent by the bot immediately after the `fileConsentAccept` event is processed.
 
 **Acceptance Scenarios**:
 
-1. **Given** an upload batch is created, **When** no files are uploaded within the configured timeout (default 3 minutes), **Then** the batch state should be automatically cleared and the user should be able to start a new upload.
-2. **Given** an upload is in progress, **When** the user issues a "cancel upload" command, **Then** the current batch state should be cleared immediately and confirmation sent to the user.
-3. **Given** an upload batch exists with pending status, **When** the user issues a "force restart upload" command, **Then** the existing batch should be cleared and a new upload process should begin.
-4. **Given** a partial upload failure (some files uploaded, some declined), **When** the user attempts to upload again, **Then** they should receive clear guidance on how to restart the process.
+1. **Given** a successful file upload and permission grant, **When** the bot completes the initial retrieval, **Then** it must send an Adaptive Card containing the file name and a success message.
 
 ---
 
@@ -60,43 +43,27 @@ The bot needs to handle interrupted upload sessions gracefully, including automa
 - **User Declines Consent**: If the user declines the file upload consent in Teams, the bot should handle the `fileConsentDecline` event gracefully and notify the user that the operation was cancelled.
 - **File Too Large**: If the file exceeds OneDrive or Teams upload limits, the bot should handle the error and provide a meaningful message to the user.
 - **Network Timeout**: If the connection to OneDrive fails during the read operation, the bot should retry or inform the user of the temporary failure.
-- **Upload Session Timeout**: If the user doesn't complete the upload within the configured timeout period (default 3 minutes), the batch state should be automatically cleared to prevent blocking future uploads.
-- **Stuck Pending State**: If a previous upload attempt left the system in a pending state, the user should be able to forcefully restart the upload process using explicit commands.
-- **Partial Batch Completion**: If only some files in a batch are successfully uploaded, the user should receive clear feedback and have the option to restart the entire batch.
 
 ## Requirements _(mandatory)_
 
 ### Functional Requirements
 
-- **FR-001**: System MUST be able to send File Consent Cards to the user to initiate the upload process for one or more files.
-- **FR-002**: System MUST implement handlers for `fileConsentAccept` and `fileConsentDecline` invoke activities, supporting multiple responses.
+- **FR-001**: System MUST be able to send a File Consent Card to the user to initiate the upload process.
+- **FR-002**: System MUST implement handlers for `fileConsentAccept` and `fileConsentDecline` invoke activities.
 - **FR-003**: System MUST use the Service Principal's credentials to authenticate with Microsoft Graph API for file access.
-- **FR-004**: System MUST be able to download the content of all consented files from the provided OneDrive download URLs.
+- **FR-004**: System MUST be able to download the file content from the provided OneDrive download URL.
 - **FR-005**: System MUST support common document file types including PDF, DOC, and DOCX.
 - **FR-006**: The file upload logic MUST be implemented in a shared module (e.g., `src/utils/genie_manager.py` or a new `file_handler.py`) to allow use by multiple bot types.
-- **FR-007**: System MUST automatically clean up upload batch states that remain pending for longer than the configured timeout period (default: 3 minutes, configurable via `UPLOAD_TIMEOUT_MINUTES` environment variable or settings).
-- **FR-008**: System MUST support user-initiated cancellation of ongoing upload batches via explicit commands (e.g., "取消上傳", "cancel upload").
-- **FR-009**: System MUST support force restart of upload sessions via explicit commands (e.g., "重新上傳", "upload reset") to clear stuck pending states.
-- **FR-010**: System MUST provide clear user feedback when an upload batch is cancelled (manually or by timeout) and guide users on how to start a new upload.
-
-### Configuration Requirements
-
-- **CFG-001**: System MUST read upload timeout configuration from `UPLOAD_TIMEOUT_MINUTES` environment variable, defaulting to 3 minutes if not set.
-- **CFG-002**: The timeout value MUST be configurable in `src/core/settings.py` with proper type validation (positive integer).
-- **CFG-003**: System MUST log the active timeout configuration on startup for operational visibility.
 
 ### Key Entities
 
-- **UploadRequest**: Represents the initial request from the bot to the user to upload files, potentially tracking a batch of files.
-- **UploadedFile**: Represents the metadata for a single file received from Teams, including name, content type, download URL, and unique ID.
-- **UploadBatchState**: Tracks the state of an upload session including `created_at` timestamp for timeout detection, `status` (pending/completed/cancelled), `expected_files` count, and list of `uploaded_files`.
+- **UploadRequest**: Represents the initial request from the bot to the user to upload a file, identified by a unique ID.
+- **UploadedFile**: Represents the file metadata received from Teams, including name, content type, download URL, and unique ID.
 
 ## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
-- **SC-001**: 100% of successfully consented files (even when multiple files are uploaded) are readable by the bot via the Service Principal.
-- **SC-002**: The feedback Adaptive Card listing all uploaded files is delivered to the user within 3 seconds of the bot processing the final consent acceptance in a batch.
+- **SC-001**: 100% of successfully consented files are readable by the bot via the Service Principal.
+- **SC-002**: The feedback Adaptive Card is delivered to the user within 3 seconds of the bot receiving the consent acceptance.
 - **SC-003**: The implementation logic is decoupled from `FoundryBot` such that it can be integrated into another bot class with less than 2 hours of additional development effort.
-- **SC-004**: Upload batch states that remain pending for longer than the configured timeout are automatically cleaned up within 10 seconds of the timeout expiration.
-- **SC-005**: Users can successfully start a new upload process within 2 seconds after cancelling or after a timeout, without encountering "upload in progress" errors.

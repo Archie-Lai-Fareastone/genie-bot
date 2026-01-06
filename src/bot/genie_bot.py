@@ -99,14 +99,8 @@ class GenieBot(BaseBot):
         user_id = turn_context.activity.from_property.id
         question = (turn_context.activity.text or "").strip()
 
-        # 檢查並處理特殊命令（包含檔案上傳）
         if await self.command_handler.handle_special_command(
-            question=question,
-            turn_context=turn_context,
-            user_id=user_id,
-            thread_dict=self.thread_dict,
-            project_client=None,
-            file_handler=self.file_handler,
+            question, turn_context, user_id, self.thread_dict, None
         ):
             return
 
