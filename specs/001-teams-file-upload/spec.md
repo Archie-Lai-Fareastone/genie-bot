@@ -38,11 +38,31 @@ After a user successfully uploads one or more files, the bot should provide imme
 
 ---
 
+### User Story 3 - Upload Session Management and Recovery (Priority: P2)
+
+The bot needs to handle interrupted upload sessions gracefully, including automatic timeout cleanup, user-initiated cancellation, and the ability to restart failed upload batches.
+
+**Why this priority**: Prevents system from getting stuck in pending states and provides users with control over the upload process.
+
+**Independent Test**: Can be tested by initiating an upload, waiting for timeout, cancelling mid-process, or intentionally declining some files, then verifying state is properly cleaned up and new uploads can be initiated.
+
+**Acceptance Scenarios**:
+
+1. **Given** an upload batch is created, **When** no files are uploaded within the configured timeout (default 3 minutes), **Then** the batch state should be automatically cleared and the user should be able to start a new upload.
+2. **Given** an upload is in progress, **When** the user issues a "cancel upload" command, **Then** the current batch state should be cleared immediately and confirmation sent to the user.
+3. **Given** an upload batch exists with pending status, **When** the user issues a "force restart upload" command, **Then** the existing batch should be cleared and a new upload process should begin.
+4. **Given** a partial upload failure (some files uploaded, some declined), **When** the user attempts to upload again, **Then** they should receive clear guidance on how to restart the process.
+
+---
+
 ### Edge Cases
 
 - **User Declines Consent**: If the user declines the file upload consent in Teams, the bot should handle the `fileConsentDecline` event gracefully and notify the user that the operation was cancelled.
 - **File Too Large**: If the file exceeds OneDrive or Teams upload limits, the bot should handle the error and provide a meaningful message to the user.
 - **Network Timeout**: If the connection to OneDrive fails during the read operation, the bot should retry or inform the user of the temporary failure.
+- **Upload Session Timeout**: If the user doesn't complete the upload within the configured timeout period (default 3 minutes), the batch state should be automatically cleared to prevent blocking future uploads.
+- **Stuck Pending State**: If a previous upload attempt left the system in a pending state, the user should be able to forcefully restart the upload process using explicit commands.
+- **Partial Batch Completion**: If only some files in a batch are successfully uploaded, the user should receive clear feedback and have the option to restart the entire batch.
 
 ## Requirements _(mandatory)_
 
@@ -54,11 +74,22 @@ After a user successfully uploads one or more files, the bot should provide imme
 - **FR-004**: System MUST be able to download the content of all consented files from the provided OneDrive download URLs.
 - **FR-005**: System MUST support common document file types including PDF, DOC, and DOCX.
 - **FR-006**: The file upload logic MUST be implemented in a shared module (e.g., `src/utils/genie_manager.py` or a new `file_handler.py`) to allow use by multiple bot types.
+- **FR-007**: System MUST automatically clean up upload batch states that remain pending for longer than the configured timeout period (default: 3 minutes, configurable via `UPLOAD_TIMEOUT_MINUTES` environment variable or settings).
+- **FR-008**: System MUST support user-initiated cancellation of ongoing upload batches via explicit commands (e.g., "取消上傳", "cancel upload").
+- **FR-009**: System MUST support force restart of upload sessions via explicit commands (e.g., "重新上傳", "upload reset") to clear stuck pending states.
+- **FR-010**: System MUST provide clear user feedback when an upload batch is cancelled (manually or by timeout) and guide users on how to start a new upload.
+
+### Configuration Requirements
+
+- **CFG-001**: System MUST read upload timeout configuration from `UPLOAD_TIMEOUT_MINUTES` environment variable, defaulting to 3 minutes if not set.
+- **CFG-002**: The timeout value MUST be configurable in `src/core/settings.py` with proper type validation (positive integer).
+- **CFG-003**: System MUST log the active timeout configuration on startup for operational visibility.
 
 ### Key Entities
 
 - **UploadRequest**: Represents the initial request from the bot to the user to upload files, potentially tracking a batch of files.
 - **UploadedFile**: Represents the metadata for a single file received from Teams, including name, content type, download URL, and unique ID.
+- **UploadBatchState**: Tracks the state of an upload session including `created_at` timestamp for timeout detection, `status` (pending/completed/cancelled), `expected_files` count, and list of `uploaded_files`.
 
 ## Success Criteria _(mandatory)_
 
@@ -67,3 +98,5 @@ After a user successfully uploads one or more files, the bot should provide imme
 - **SC-001**: 100% of successfully consented files (even when multiple files are uploaded) are readable by the bot via the Service Principal.
 - **SC-002**: The feedback Adaptive Card listing all uploaded files is delivered to the user within 3 seconds of the bot processing the final consent acceptance in a batch.
 - **SC-003**: The implementation logic is decoupled from `FoundryBot` such that it can be integrated into another bot class with less than 2 hours of additional development effort.
+- **SC-004**: Upload batch states that remain pending for longer than the configured timeout are automatically cleaned up within 10 seconds of the timeout expiration.
+- **SC-005**: Users can successfully start a new upload process within 2 seconds after cancelling or after a timeout, without encountering "upload in progress" errors.

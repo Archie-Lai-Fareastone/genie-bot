@@ -30,3 +30,20 @@
 
 - **Direct Download vs. Graph SDK**: `requests` is simpler for a few calls; `msgraph-sdk` is better for complex Graph operations. Since we only need download and maybe metadata, `requests` + `MSAL` is chosen for lightness.
 - **Storage**: Initially, keep files in memory or temporary local storage before passing to Foundry/Genie.
+
+## Teams FileConsentCard Limitations
+
+### Single File Design
+
+- **Observation**: The Teams `FileConsentCard` is designed to handle a single file per card. Each card includes metadata for one file, such as `filename`, `acceptContext`, and `declineContext`.
+- **Implication**: To support multiple file uploads, the bot must send multiple `FileConsentCard` instances, one for each file.
+- **Reasoning**: This limitation arises because the `fileConsentAccept` and `fileConsentDecline` events are tied to a single file context, and Teams does not provide a batch consent mechanism.
+- **Best Practice**: For multi-file uploads, the bot should:
+  1. Prompt the user with the total number of files expected.
+  2. Sequentially send `FileConsentCard` instances for each file.
+  3. Track the state of the upload batch to ensure all files are processed.
+
+### Alternatives
+
+- **Adaptive Cards**: Consider using Adaptive Cards for a more flexible multi-file upload experience, though this requires additional user interaction and custom handling.
+- **Third-party Services**: For advanced use cases, integrate with external file upload services that support batch uploads.
