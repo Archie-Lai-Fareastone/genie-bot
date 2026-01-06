@@ -3,6 +3,8 @@
 Auto-generated from all feature plans. Last updated: 2026-01-06
 
 ## Active Technologies
+- Python 3.10+ (as indicated by `requirements.txt`) + `botbuilder-core`, `botbuilder-schema`, `botbuilder-integration-aiohttp` (001-teams-file-upload)
+- N/A (requirements explicitly state to remove upload state recording) (001-teams-file-upload)
 
 - Python 3.12+ + `botbuilder-core`, `botbuilder-schema`, `msgraph-sdk-python` (or `requests` for Graph API), `fastapi` (001-teams-file-upload)
 
@@ -22,6 +24,7 @@ cd src; pytest; ruff check .
 Python 3.12+: Follow standard conventions
 
 ## Recent Changes
+- 001-teams-file-upload: Added Python 3.10+ (as indicated by `requirements.txt`) + `botbuilder-core`, `botbuilder-schema`, `botbuilder-integration-aiohttp`
 
 - 001-teams-file-upload: Added Python 3.12+ + `botbuilder-core`, `botbuilder-schema`, `msgraph-sdk-python` (or `requests` for Graph API), `fastapi`
 
