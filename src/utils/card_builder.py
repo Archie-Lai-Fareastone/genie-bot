@@ -3,6 +3,7 @@
 from botbuilder.schema import Attachment
 from src.core.logger_config import get_logger
 from src.utils.chart_tool import ChartTool
+from typing import List, Dict, Any
 
 logger = get_logger(__name__)
 
@@ -193,3 +194,107 @@ def convert_to_card(response_data: dict) -> Attachment:
     return Attachment(
         content_type="application/vnd.microsoft.card.adaptive", content=card_content
     )
+
+
+def create_file_upload_confirmation_card(files: List[Dict[str, Any]]) -> Attachment:
+    """
+    建立檔案上傳確認 Adaptive Card
+
+    Args:
+        files: 檔案清單，每個檔案應包含:
+            - name: 檔案名稱
+            - size: 檔案大小（位元組）
+            - content_type: MIME 類型（選填）
+
+    Returns:
+        Adaptive Card Attachment
+    """
+    # 建立檔案清單元素
+    file_items = []
+
+    # 標題
+    file_items.append(
+        {
+            "type": "TextBlock",
+            "text": "✅ 檔案上傳成功",
+            "weight": "Bolder",
+            "size": "Large",
+            "color": "Good",
+        }
+    )
+
+    file_items.append(
+        {
+            "type": "TextBlock",
+            "text": f"已成功接收 {len(files)} 個檔案：",
+            "wrap": True,
+            "spacing": "Medium",
+        }
+    )
+
+    # 為每個檔案建立一個 FactSet
+    for idx, file_info in enumerate(files, 1):
+        name = file_info.get("name", "未知檔案")
+        size = file_info.get("size", 0)
+        content_type = file_info.get("content_type", "未知類型")
+
+        # 格式化檔案大小
+        size_str = format_file_size(size)
+
+        # 檔案資訊區塊
+        file_items.append(
+            {
+                "type": "Container",
+                "spacing": "Medium",
+                "separator": True if idx > 1 else False,
+                "items": [
+                    {
+                        "type": "TextBlock",
+                        "text": f"📄 檔案 {idx}",
+                        "weight": "Bolder",
+                        "size": "Medium",
+                    },
+                    {
+                        "type": "FactSet",
+                        "facts": [
+                            {"title": "檔案名稱:", "value": name},
+                            {"title": "檔案大小:", "value": size_str},
+                            {"title": "檔案類型:", "value": content_type},
+                        ],
+                    },
+                ],
+            }
+        )
+
+    # 建立完整卡片
+    card_content = {"type": "AdaptiveCard", "version": "1.4", "body": file_items}
+
+    logger.info(f"建立檔案上傳確認卡片，包含 {len(files)} 個檔案")
+
+    return Attachment(
+        content_type="application/vnd.microsoft.card.adaptive", content=card_content
+    )
+
+
+def format_file_size(size_bytes: int) -> str:
+    """
+    格式化檔案大小為人類可讀格式
+
+    Args:
+        size_bytes: 檔案大小（位元組）
+
+    Returns:
+        格式化的檔案大小字串
+    """
+    # 處理無效或未知的檔案大小
+    if not isinstance(size_bytes, (int, float)) or size_bytes <= 0:
+        return "未知大小"
+
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    elif size_bytes < 1024 * 1024:
+        return f"{size_bytes / 1024:.2f} KB"
+    elif size_bytes < 1024 * 1024 * 1024:
+        return f"{size_bytes / (1024 * 1024):.2f} MB"
+    else:
+        return f"{size_bytes / (1024 * 1024 * 1024):.2f} GB"
