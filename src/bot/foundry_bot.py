@@ -83,13 +83,19 @@ class FoundryBot(BaseBot):
             logger.error(f"工具集設定過程中發生錯誤: {e}", exc_info=True)
             raise
 
-    async def on_message_activity(self, turn_context: TurnContext):
-        """處理使用者訊息"""
+    async def _handle_file_attachments(
+        self, turn_context: TurnContext, user_id: str, question: str
+    ) -> bool:
+        """處理檔案附件
 
-        user_id = turn_context.activity.from_property.id
-        question = (turn_context.activity.text or "").strip()
+        Args:
+            turn_context: 對話上下文
+            user_id: 使用者 ID
+            question: 使用者問題
 
-        # 處理檔案附件 (如果有)
+        Returns:
+            如果只有附件沒有文字訊息則返回 True，否則返回 False
+        """
         attachments = extract_attachments(turn_context.activity)
         logger.info(f"使用者 {user_id} 上傳的附件數量: {len(attachments)}")
         if attachments:
@@ -115,7 +121,19 @@ class FoundryBot(BaseBot):
 
             # 如果只有附件沒有文字訊息，直接返回
             if not question:
-                return
+                return True
+
+        return False
+
+    async def on_message_activity(self, turn_context: TurnContext):
+        """處理使用者訊息"""
+
+        user_id = turn_context.activity.from_property.id
+        question = (turn_context.activity.text or "").strip()
+
+        # 處理檔案附件 (如果有)
+        if await self._handle_file_attachments(turn_context, user_id, question):
+            return
 
         # 檢查並處理特殊命令
         if await self.command_handler.handle_special_command(
