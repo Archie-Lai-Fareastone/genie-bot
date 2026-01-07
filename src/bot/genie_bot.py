@@ -96,14 +96,9 @@ class GenieBot(BaseBot):
     async def on_message_activity(self, turn_context: TurnContext):
         """處理使用者訊息"""
 
-        question = turn_context.activity.text.strip()
         user_id = turn_context.activity.from_property.id
+        question = (turn_context.activity.text or "").strip()
 
-        # 更新最後使用時間
-        if user_id in self.thread_dict:
-            self.thread_last_used[user_id] = datetime.now()
-
-        # 檢查並處理特殊命令
         if await self.command_handler.handle_special_command(
             question, turn_context, user_id, self.thread_dict, None
         ):

@@ -127,20 +127,22 @@ class CommandHandler:
         Returns:
             bool: 是否已處理特殊命令（True 表示已處理，False 表示非特殊命令）
         """
+        normalized_question = (question or "").strip().lower()
+
         # 檢查歡迎命令
-        if self._is_greet_command(question):
+        if self._is_greet_command(normalized_question):
             await self.handle_greet(turn_context)
             return True
 
         # 檢查重置命令
-        if self._is_reset_command(question):
+        if self._is_reset_command(normalized_question):
             await self._handle_reset_command(
                 turn_context, user_id, thread_dict, project_client
             )
             return True
 
         # 檢查說明命令
-        if self._is_help_command(question):
+        if self._is_help_command(normalized_question):
             await self._handle_help_command(turn_context)
             return True
 
