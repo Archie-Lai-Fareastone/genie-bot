@@ -11,6 +11,11 @@ from src.core.logger_config import get_logger
 from src.utils.genie_manager import GenieManager
 from src.utils.response_format import get_agent_response_format
 from src.utils.card_builder import convert_to_card
+from src.utils.file_handler import (
+    extract_attachments,
+    validate_attachments,
+    log_attachment,
+)
 import json
 
 # 取得 logger 實例
@@ -83,6 +88,34 @@ class FoundryBot(BaseBot):
 
         user_id = turn_context.activity.from_property.id
         question = (turn_context.activity.text or "").strip()
+
+        # 處理檔案附件 (如果有)
+        attachments = extract_attachments(turn_context.activity)
+        logger.info(f"使用者 {user_id} 上傳的附件數量: {len(attachments)}")
+        if attachments:
+            supported, unsupported = validate_attachments(attachments)
+
+            # 處理不支援的檔案
+            if unsupported:
+                for file_info in unsupported:
+                    error_msg = f"File type not supported: {file_info.name}. Supported types are PDF, DOC, DOCX."
+                    await turn_context.send_activity(error_msg)
+                    logger.warning(
+                        f"Unsupported file type: {file_info.name} (type: {file_info.file_type})"
+                    )
+
+            # 處理支援的檔案
+            if supported:
+                for file_info in supported:
+                    # 記錄附件
+                    log_attachment(file_info, user_id)
+                    # 發送成功確認
+                    success_msg = f"Successfully received: {file_info.name}"
+                    await turn_context.send_activity(success_msg)
+
+            # 如果只有附件沒有文字訊息，直接返回
+            if not question:
+                return
 
         # 檢查並處理特殊命令
         if await self.command_handler.handle_special_command(
@@ -171,7 +204,9 @@ class FoundryBot(BaseBot):
                                 return
 
             await turn_context.send_activity("抱歉,我無法取得回應。")
+            return
 
         except Exception as e:
             logger.error(f"處理訊息錯誤: {e}")
             await turn_context.send_activity(f"處理請求時發生錯誤: {e}")
+            return

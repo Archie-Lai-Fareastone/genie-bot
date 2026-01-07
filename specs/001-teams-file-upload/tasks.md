@@ -13,7 +13,7 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Initialize shared utility file in `src/utils/file_handler.py`
+- [x] T001 Initialize shared utility file in `src/utils/file_handler.py`
 
 ---
 
@@ -21,8 +21,8 @@
 
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
-- [ ] T003 Define `FileAttachmentInfo` dataclass and constants in `src/utils/file_handler.py`
-- [ ] T004 Setup logger instance in `src/utils/file_handler.py` using `src/core/logger_config.py`
+- [x] T003 Define `FileAttachmentInfo` dataclass and constants in `src/utils/file_handler.py`
+- [x] T004 Setup logger instance in `src/utils/file_handler.py` using `src/core/logger_config.py`
 
 ---
 
@@ -34,8 +34,8 @@
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Implement `extract_attachments(activity)` logic in `src/utils/file_handler.py`
-- [ ] T006 [US1] Update `FoundryBot.on_message_activity` in `src/bot/foundry_bot.py` to call attachment extraction
+- [x] T005 [US1] Implement `extract_attachments(activity)` logic in `src/utils/file_handler.py`
+- [x] T006 [US1] Update `FoundryBot.on_message_activity` in `src/bot/foundry_bot.py` to call attachment extraction
 
 ---
 
@@ -47,8 +47,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T008 [US2] Implement `validate_attachments(files)` in `src/utils/file_handler.py` (Whitelist: .pdf, .doc, .docx)
-- [ ] T009 [US2] Add logic in `src/bot/foundry_bot.py` to send error messages for unsupported file types
+- [x] T008 [US2] Implement `validate_attachments(files)` in `src/utils/file_handler.py` (Whitelist: .pdf, .doc, .docx)
+- [x] T009 [US2] Add logic in `src/bot/foundry_bot.py` to send error messages for unsupported file types
 
 ---
 
@@ -60,9 +60,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T011 [US3] Implement `log_attachment(file_info, user_info)` in `src/utils/file_handler.py`
-- [ ] T012 [US3] Add success feedback response logic in `src/bot/foundry_bot.py`
-- [ ] T013 [P] [US3] Verify log output matches requirements in `logs/app.log`
+- [x] T011 [US3] Implement `log_attachment(file_info, user_info)` in `src/utils/file_handler.py`
+- [x] T012 [US3] Add success feedback response logic in `src/bot/foundry_bot.py`
+- [x] T013 [P] [US3] Verify log output matches requirements in `logs/app.log`
 
 ---
 
@@ -70,9 +70,9 @@
 
 **Purpose**: Improvements and final validation
 
-- [ ] T014 [P] Update `specs/001-teams-file-upload/quickstart.md` with final testing details
-- [ ] T015 Perform final end-to-end manual validation per `quickstart.md`
-- [ ] T016 [P] Code cleanup and docstrings for all new functions in `src/utils/file_handler.py`
+- [x] T014 [P] Update `specs/001-teams-file-upload/quickstart.md` with final testing details
+- [x] T015 Perform final end-to-end manual validation per `quickstart.md`
+- [x] T016 [P] Code cleanup and docstrings for all new functions in `src/utils/file_handler.py`
 
 ---
 
