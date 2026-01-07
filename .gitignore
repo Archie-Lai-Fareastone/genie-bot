@@ -257,3 +257,9 @@ temp/
 
 # deployment
 deploy.zip
+
+# development
+.github/
+.vscode/
+.specify/
+specs/
