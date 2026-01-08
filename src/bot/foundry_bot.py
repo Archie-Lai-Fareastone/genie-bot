@@ -85,7 +85,7 @@ class FoundryBot(BaseBot):
 
     async def _handle_file_attachments(
         self, turn_context: TurnContext, user_id: str, question: str
-    ) -> bool:
+    ) -> list:
         """處理檔案附件
 
         Args:
@@ -94,36 +94,33 @@ class FoundryBot(BaseBot):
             question: 使用者問題
 
         Returns:
-            如果只有附件沒有文字訊息則返回 True，否則返回 False
+            支援的附件列表
         """
         attachments = extract_attachments(turn_context.activity)
         logger.info(f"使用者 {user_id} 上傳的附件數量: {len(attachments)}")
-        if attachments:
-            supported, unsupported = validate_attachments(attachments)
 
-            # 處理不支援的檔案
-            if unsupported:
-                for file_info in unsupported:
-                    error_msg = f"File type not supported: {file_info.name}. Supported types are PDF, DOC, DOCX."
-                    await turn_context.send_activity(error_msg)
-                    logger.warning(
-                        f"Unsupported file type: {file_info.name} (type: {file_info.file_type})"
-                    )
+        if not attachments:
+            return []
 
-            # 處理支援的檔案
-            if supported:
-                for file_info in supported:
-                    # 記錄附件
-                    log_attachment(file_info, user_id)
-                    # 發送成功確認
-                    success_msg = f"Successfully received: {file_info.name}"
-                    await turn_context.send_activity(success_msg)
+        supported, unsupported = validate_attachments(attachments)
 
-            # 如果只有附件沒有文字訊息，直接返回
-            if not question:
-                return True
+        # 處理不支援的檔案
+        if unsupported:
+            for file_info in unsupported:
+                error_msg = f"File type not supported: {file_info.name}. Supported types are PDF, DOC, DOCX."
+                await turn_context.send_activity(error_msg)
+                logger.warning(
+                    f"Unsupported file type: {file_info.name} (type: {file_info.file_type})"
+                )
 
-        return False
+        # 處理支援的檔案
+        if supported:
+            for file_info in supported:
+                log_attachment(file_info, user_id)
+                success_msg = f"Successfully received: {file_info.name}"
+                await turn_context.send_activity(success_msg)
+
+        return supported
 
     async def on_message_activity(self, turn_context: TurnContext):
         """處理使用者訊息"""
@@ -132,7 +129,12 @@ class FoundryBot(BaseBot):
         question = (turn_context.activity.text or "").strip()
 
         # 處理檔案附件 (如果有)
-        if await self._handle_file_attachments(turn_context, user_id, question):
+        supported_files = await self._handle_file_attachments(
+            turn_context, user_id, question
+        )
+
+        # 如果只有附件沒有文字訊息，直接返回
+        if supported_files and not question:
             return
 
         # 檢查並處理特殊命令
@@ -145,7 +147,15 @@ class FoundryBot(BaseBot):
         await turn_context.send_activity(Activity(type=ActivityTypes.typing))
 
         try:
-            logger.info(f"使用者 {user_id}: {question}")
+            # 組合訊息內容：如果有附件，加入附件資訊
+            message_content = question
+            if supported_files:
+                file_info_text = "\n\nAttached files:\n" + "\n".join(
+                    [f"- {f.name}: {f.download_url}" for f in supported_files]
+                )
+                message_content = question + file_info_text
+
+            logger.info(f"使用者 {user_id}: {message_content}")
 
             # 建立或取得既有的執行緒
             thread_id = None
@@ -164,9 +174,9 @@ class FoundryBot(BaseBot):
             # 發送訊息前再次顯示打字指示器
             await turn_context.send_activity(Activity(type=ActivityTypes.typing))
 
-            # 發送訊息
+            # 發送訊息（包含附件資訊）
             self.project_client.agents.messages.create(
-                thread_id=thread_id, role="user", content=question
+                thread_id=thread_id, role="user", content=message_content
             )
 
             # 取得回應格式定義

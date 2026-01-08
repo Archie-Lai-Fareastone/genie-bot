@@ -16,6 +16,7 @@ def get_agent_response_format() -> ResponseFormatJsonSchemaType:
     1. card_type=chart: 繪製圖表
     2. card_type=table: 顯示表格資料
     3. card_type=text, card_type=sql: 純文字或 SQL 查詢回應
+    4. card_type=link: 超連結回應 (檔案下載連結)
 
     Returns:
         ResponseFormatJsonSchemaType: Azure AI Agents 的回應格式物件
@@ -30,7 +31,7 @@ def get_agent_response_format() -> ResponseFormatJsonSchemaType:
                     "properties": {
                         "card_type": {
                             "type": "string",
-                            "description": "卡片類型，只能是以下值之一：text, sql, table, chart",
+                            "description": "卡片類型，只能是以下值之一：text, sql, table, chart, link",
                         },
                         "content": {
                             "type": "string",
@@ -60,6 +61,10 @@ def get_agent_response_format() -> ResponseFormatJsonSchemaType:
                             "type": "string",
                             "description": "當 card_type 為 chart 時提供此欄位，只能是以下值之一：line, pie, donut, horizontal_bar, vertical_bar",
                         },
+                        "url": {
+                            "type": "string",
+                            "description": "當 card_type 為 link 時必須提供此欄位，包含超連結 URL",
+                        },
                     },
                     "required": ["card_type"],
                     "additionalProperties": False,
@@ -79,10 +84,12 @@ def get_agent_response_format() -> ResponseFormatJsonSchemaType:
             "- 如果 card_type 是 'text' 或 'sql'：必須提供 'content' 欄位\n"
             "- 如果 card_type 是 'table'：必須提供 'headers' 和 'rows' 欄位\n"
             "- 如果 card_type 是 'chart'：必須提供 'chart_type'、'labels' 和 'values' 欄位。**並且確保 labels 和 values 長度一致**。\n\n"
+            "- 如果 card_type 是 'link'：必須提供 'url' 欄位\n\n"
             "正確格式範例：\n"
             "{'cards': [{'card_type': 'text', 'content': '這是一段文字內容'}]}\n"
             "{'cards': [{'card_type': 'text', 'content': '以下是圖表'}, {'card_type': 'chart', 'chart_type': 'vertical_bar', 'labels': ['一月', '二月'], 'values': ['10', '20']}]}\n"
             "{'cards': [{'card_type': 'text', 'content': '以下是表格'}, {'card_type': 'table', 'headers': ['姓名', '年齡'], 'rows': [['張三', '25']]}]}\n"
+            "{'cards': [{'card_type': 'link', 'url': 'https://example.com/file.pdf'}]}"
         ),
     )
 
