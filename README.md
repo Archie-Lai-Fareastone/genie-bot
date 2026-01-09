@@ -234,11 +234,19 @@ python3 -m uvicorn src.app:app --host 0.0.0.0 --port 8000 --workers 2 --log-leve
 
 ## 6. 發佈 teams
 
+### Developer portal 填寫資料
+
 - **https://dev.teams.cloud.microsoft/home**
 
 * Basic information: 填寫 app name, description...
 * Branding: 上傳 192x192 pixels color icon, 32x32 pixels outline icon
 * App features: 選擇 Bot，bot id 是 AZURE_CLIENT_ID，scope personal
+  - 如果有檔案上下傳功能，**要勾選 Bot -> Upload and download files，在 manifest.json 裡會自動加上 "supportsFiles": true**
 * App package editor: 檢查 manifest.json
 * Languages: zh-tw
 * Domains: webapp url (不含 http(s)://)
+
+### Developer portal: publish to org
+
+- 第一次發佈會顯示 submitted，審核通過後會變成 published
+- 第二次要更新時，需升版號 1.0.0 -> 1.0.1，按下 submit update 以後**至少過了一天以後**才會在 developer portal 顯示 新的 submitted 狀態
