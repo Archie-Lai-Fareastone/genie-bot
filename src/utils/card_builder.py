@@ -1,4 +1,12 @@
-"""處理不同類型的 agent 回應並轉換為 Adaptive Card"""
+"""
+處理不同類型的 agent 回應並轉換為 Adaptive Card
+
+目前支援的卡片類型：
+- 文字卡片 (text)
+- SQL 指令卡片 (sql)
+- 表格卡片 (table)
+- 圖表卡片 (chart)
+"""
 
 from botbuilder.schema import Attachment
 from src.core.logger_config import get_logger
@@ -7,52 +15,44 @@ from src.utils.chart_tool import ChartTool
 logger = get_logger(__name__)
 
 
-def create_text_card(content: str) -> dict:
+def create_text_card(content: str) -> list:
     """建立文字卡片
 
     Args:
         content: 文字內容
 
     Returns:
-        Adaptive Card JSON
+        Adaptive Card body 元素列表
     """
-    return {
-        "type": "AdaptiveCard",
-        "version": "1.4",
-        "body": [{"type": "TextBlock", "text": content, "wrap": True}],
-    }
+    return [{"type": "TextBlock", "text": content, "wrap": True}]
 
 
-def create_sql_card(content: str) -> dict:
+def create_sql_card(content: str) -> list:
     """建立 SQL 查詢卡片
 
     Args:
         content: SQL 查詢內容
 
     Returns:
-        Adaptive Card JSON
+        Adaptive Card body 元素列表
     """
-    return {
-        "type": "AdaptiveCard",
-        "version": "1.4",
-        "body": [
-            {
-                "type": "TextBlock",
-                "text": "SQL 指令",
-                "weight": "Bolder",
-                "size": "Medium",
-            },
-            {
-                "type": "TextBlock",
-                "text": content,
-                "wrap": True,
-                "fontType": "Monospace",
-            },
-        ],
-    }
+    return [
+        {
+            "type": "TextBlock",
+            "text": "SQL 指令",
+            "weight": "Bolder",
+            "size": "Medium",
+        },
+        {
+            "type": "TextBlock",
+            "text": content,
+            "wrap": True,
+            "fontType": "Monospace",
+        },
+    ]
 
 
-def create_table_card(headers: list[str], rows: list[list[str]]) -> dict:
+def create_table_card(headers: list[str], rows: list[list[str]]) -> list:
     """建立表格卡片
 
     Args:
@@ -60,7 +60,7 @@ def create_table_card(headers: list[str], rows: list[list[str]]) -> dict:
         rows: 表格資料列
 
     Returns:
-        Adaptive Card JSON
+        Adaptive Card body 元素列表
     """
     # 建立表格列
     table_rows = []
@@ -92,24 +92,39 @@ def create_table_card(headers: list[str], rows: list[list[str]]) -> dict:
         }
         table_rows.append(data_row)
 
-    return {
-        "type": "AdaptiveCard",
-        "version": "1.4",
-        "body": [
-            {
-                "type": "Table",
-                "columns": [{"width": "auto"} for _ in headers],
-                "rows": table_rows,
-            }
-        ],
-    }
+    return [
+        {
+            "type": "Table",
+            "columns": [{"width": "auto"} for _ in headers],
+            "rows": table_rows,
+        }
+    ]
+
+
+def create_link_card(url: str) -> list:
+    """建立連結卡片
+
+    Args:
+        url: 連結 URL
+
+    Returns:
+        Adaptive Card body 元素列表
+    """
+    return [
+        {
+            "type": "TextBlock",
+            "text": "點擊下方按鈕以查看詳細資訊",
+            "weight": "Bolder",
+            "size": "Medium",
+        }
+    ]
 
 
 def create_chart_card(
     labels: list[str],
     values: list[str],
     chart_type: ChartTool.ChartType = "vertical_bar",
-) -> dict:
+) -> list:
     """建立圖表卡片
 
     Args:
@@ -118,7 +133,7 @@ def create_chart_card(
         chart_type: 圖表類型 ("pie", "donut", "horizontal_bar", "vertical_bar", "line")
 
     Returns:
-        Adaptive Card JSON
+        Adaptive Card body 元素列表
     """
     # 將 values 轉換為 float
     float_values = [float(v) for v in values]
@@ -126,23 +141,19 @@ def create_chart_card(
     # 使用 chart_tools 生成圖表
     chart_data_uri = ChartTool.chart_to_base64(float_values, labels, chart_type)
 
-    return {
-        "type": "AdaptiveCard",
-        "version": "1.4",
-        "body": [
-            {
-                "type": "TextBlock",
-                "text": "圖表",
-                "weight": "Bolder",
-                "size": "Medium",
-            },
-            {
-                "type": "Image",
-                "url": chart_data_uri,
-                "width": "360px",  # TODO: 未來可由 agent 提供更細緻化控制
-            },
-        ],
-    }
+    return [
+        {
+            "type": "TextBlock",
+            "text": "圖表",
+            "weight": "Bolder",
+            "size": "Medium",
+        },
+        {
+            "type": "Image",
+            "url": chart_data_uri,
+            "width": "360px",  # TODO: 未來可由 agent 提供更細緻化控制
+        },
+    ]
 
 
 def convert_to_card(response_data: dict) -> Attachment:
@@ -158,27 +169,39 @@ def convert_to_card(response_data: dict) -> Attachment:
         ValueError: 當卡片類型不支援時
     """
     body_elements = []
+    actions = []
     logger.info(f"輸入資料: {response_data}")
 
     for item in response_data.get("cards", []):
         card_type = item.get("card_type")
 
         if card_type == "text":
-            card = create_text_card(content=item["content"])
+            body_elements.extend(create_text_card(content=item["content"]))
         elif card_type == "sql":
-            card = create_sql_card(content=item["content"])
+            body_elements.extend(create_sql_card(content=item["content"]))
         elif card_type == "table":
-            card = create_table_card(headers=item["headers"], rows=item["rows"])
+            body_elements.extend(
+                create_table_card(headers=item["headers"], rows=item["rows"])
+            )
         elif card_type == "chart":
-            card = create_chart_card(
-                labels=item["labels"],
-                values=item["values"],
-                chart_type=item.get("chart_type", "vertical_bar"),
+            body_elements.extend(
+                create_chart_card(
+                    labels=item["labels"],
+                    values=item["values"],
+                    chart_type=item.get("chart_type", "vertical_bar"),
+                )
+            )
+        elif card_type == "link":
+            body_elements.extend(create_link_card(url=item["url"]))
+            actions.append(
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "在新視窗開啟連結",
+                    "url": item["url"],
+                }
             )
         else:
             raise ValueError(f"不支援的卡片類型: {card_type}")
-
-        body_elements.extend(card["body"])
 
     logger.info(
         f"建立包含 {len(response_data.get('cards', []))} 個元素的 Adaptive Card",
@@ -189,6 +212,10 @@ def convert_to_card(response_data: dict) -> Attachment:
         "version": "1.4",
         "body": body_elements,
     }
+
+    # 如果有 actions，添加到卡片內容中
+    if actions:
+        card_content["actions"] = actions
 
     return Attachment(
         content_type="application/vnd.microsoft.card.adaptive", content=card_content
