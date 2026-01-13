@@ -252,11 +252,14 @@ temp/
 *.sln
 *.sw?
 
-# Github copilot
-.github/
-
 # MLflow
 /mlruns
 
 # deployment
 deploy.zip
+
+# development
+.github/
+.vscode/
+.specify/
+specs/

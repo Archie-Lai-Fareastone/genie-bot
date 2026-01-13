@@ -24,6 +24,7 @@ class BaseBot(ActivityHandler):
         Args:
             app: FastAPI 應用程式實例,用於存取 settings
         """
+        super().__init__()
         self.settings = get_settings(app)
         self.bot_mode = self.settings.app["bot_mode"]
         self.command_handler = CommandHandler(bot_mode=self.bot_mode)
